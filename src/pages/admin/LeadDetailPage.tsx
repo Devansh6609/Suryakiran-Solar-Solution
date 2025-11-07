@@ -3,12 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { Lead, LeadActivity, LeadDocument, PipelineStage, FormField, User } from '../../types';
 import * as adminService from '../../service/adminService';
 import { PIPELINE_STAGES } from '../../constants';
-import PipelineTracker from '../../components/admin/PipelineTracker.tsx';
-import { useAuth } from '../../contexts/AuthContext.tsx';
-import Card from '../../components/admin/Card.tsx';
-import LoadingSpinner from '../../components/LoadingSpinner.tsx';
+import PipelineTracker from '../../components/admin/PipelineTracker';
+import { useAuth } from '../../contexts/AuthContext';
+import Card from '../../components/admin/Card';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
 const DetailItem: React.FC<{ label: string, value: any, isImage?: boolean }> = ({ label, value, isImage = false }) => (
     <div>

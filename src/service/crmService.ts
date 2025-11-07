@@ -1,6 +1,7 @@
 // A centralized service for all CRM API interactions.
 
-const API_BASE_URL = "http://localhost:3001"; // In a real app, use import.meta.env.VITE_CRM_API_URL
+const API_BASE_URL =
+  import.meta.env.VITE_CRM_API_URL || "http://localhost:3001";
 
 /**
  * Fetches the dynamic form schema for a given calculator type.

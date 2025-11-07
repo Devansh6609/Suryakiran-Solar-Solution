@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import Sidebar from '../../components/admin/Sidebar.tsx';
-import { useAuth } from '../../contexts/AuthContext.tsx';
-import { useCrmUpdates } from '../../contexts/CrmUpdatesContext.tsx';
-import Toast from '../../components/admin/Toast.tsx';
-import ThemeToggle from '../../components/admin/ThemeToggle.tsx';
+import Sidebar from '../../components/admin/Sidebar';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCrmUpdates } from '../../contexts/CrmUpdatesContext';
+import Toast from '../../components/admin/Toast';
+import ThemeToggle from '../../components/admin/ThemeToggle';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
 interface AdminLayoutProps {
     children: React.ReactNode;

@@ -1,7 +1,8 @@
 // A centralized service for all CRM Admin API interactions.
 import { User } from "../types";
 
-const API_BASE_URL = "http://localhost:3001"; // In a real app, use import.meta.env.VITE_CRM_API_URL
+const API_BASE_URL =
+  import.meta.env.VITE_CRM_API_URL || "http://localhost:3001";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("authToken");

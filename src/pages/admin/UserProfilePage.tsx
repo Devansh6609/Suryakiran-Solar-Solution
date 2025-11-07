@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext.tsx';
-import Card from '../../components/admin/Card.tsx';
-import EditProfileModal from '../../components/admin/EditProfileModal.tsx';
+import { useAuth } from '../../contexts/AuthContext';
+import Card from '../../components/admin/Card';
+import EditProfileModal from '../../components/admin/EditProfileModal';
 import * as adminService from '../../service/adminService';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
 const UserProfilePage: React.FC = () => {
     const { user, updateUser } = useAuth();
