@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-gray-100 font-sans text-gray-900;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Apply electric gradient background ONLY for the dark theme (CRM) */
+.dark body, body:has(.dark) {
+  @apply bg-electric-gradient from-night-sky to-deep-violet bg-fixed text-text-primary;
+}
+
+
+/* Custom Scrollbar for the new electric theme */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.3); /* neon-cyan with transparency */
+  border-radius: 4px;
+  border: 1px solid rgba(6, 182, 212, 0.5);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.5);
+}
+
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-bold;
+  }
+}
+
+@layer components {
+  /* For Desktop Nav on public site */
+  .nav-link-animated {
+    @apply relative py-2 px-4 block rounded-md text-base font-medium transition-colors duration-300;
+  }
+
+  .nav-link-animated::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: theme('colors.neon-cyan');
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+  }
+  
+  .nav-link-animated.text-white::after {
+     background-color: white;
+  }
+
+  .nav-link-animated:hover::after,
+  .nav-link-animated.active::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+
+  /* Homepage Panel styles for sticky stacking */
+  .panel {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+  }
+}
+
+@layer utilities {
+    .text-glow {
+        text-shadow: 0 0 8px theme('colors.glow-cyan');
+    }
+}

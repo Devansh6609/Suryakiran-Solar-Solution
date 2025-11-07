@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  name            String
+  password        String
+  role            String   // "Master" or "Vendor"
+  country         String?
+  state           String?
+  district        String?
+  profileImage    String? // New field for profile image filename
+  assignedLeads   Lead[]   @relation("AssignedToVendor")
+
+  @@map("users")
+}
+
+model Lead {
+  id               String   @id @default(uuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Contact Info
+  name             String?
+  email            String?
+  phone            String?
+  otpVerified      Boolean  @default(false)
+  
+  // Lead Details
+  productType      String   // 'rooftop', 'pump', or 'Contact Inquiry'
+  pipelineStage    String
+  score            Int      @default(0)
+  scoreStatus      String   // 'Hot', 'Warm', 'Cold'
+  source           String?  // e.g., 'Website', 'Referral'
+
+  // Dynamic fields from the calculator/contact form
+  customFields     Json
+
+  // Relationships
+  assignedVendorId String?
+  assignedTo       User?    @relation("AssignedToVendor", fields: [assignedVendorId], references: [id])
+  
+  documents        LeadDocument[]
+  activityLog      LeadActivity[]
+
+  @@map("leads")
+}
+
+model LeadDocument {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  filename    String
+  uploadedAt  DateTime @default(now())
+
+  @@map("lead_documents")
+}
+
+model LeadActivity {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  timestamp   DateTime @default(now())
+  action      String   // e.g., 'Stage changed to...', 'Note Added'
+  user        String?  // Name of the user who performed the action
+  notes       String?  // For note-specific activities
+
+  @@map("lead_activities")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}

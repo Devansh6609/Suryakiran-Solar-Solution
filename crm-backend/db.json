@@ -1,0 +1,252 @@
+{
+  "leads": [
+    {
+      "id": "lead_1760591729724_163x8ful1",
+      "createdAt": "2025-10-16T05:15:29.724Z",
+      "productType": "rooftop",
+      "location": "WASDW",
+      "customFields": {
+        "DISTRICT": "WASDW",
+        "TAISIL": "BHARUCH",
+        "VILLAGE": "NETRANG",
+        "Name": "DEVANSH PATEL",
+        "AADHAR_NUMBER": "12345678723",
+        "PANCARD": "ASD2342342",
+        "CONSUMER_NUMBER": "45678774wefghj6546",
+        "BANK_ACCOUNT_NO": "234567876543223456",
+        "IFCI_CODE": "ngf23456",
+        "MOBILE_NO": "1234567890",
+        "KW": "5KW",
+        "INVERTER": "Standard",
+        "AADHAR_IMAGE": "/uploads/lead_1760591729724_163x8ful1/1760591729735-Screenshot 2025-07-25 132639.png",
+        "PANCARD_IMAGE": "/uploads/lead_1760591729724_163x8ful1/1760591729739-Screenshot 2025-07-25 132705.png"
+      },
+      "name": "Devansh",
+      "phone": "+919723757569",
+      "email": "pateldevansh155@gmail.com",
+      "otpVerified": true,
+      "score": 92,
+      "scoreStatus": "Hot",
+      "pipelineStage": "Closed Won / Project",
+      "assignedTo": "Unassigned",
+      "documents": [
+        {
+          "filename": "/uploads/lead_1760591729724_163x8ful1/1760591729735-Screenshot 2025-07-25 132639.png",
+          "uploadedAt": "2025-10-16T05:15:29.744Z"
+        },
+        {
+          "filename": "/uploads/lead_1760591729724_163x8ful1/1760591729739-Screenshot 2025-07-25 132705.png",
+          "uploadedAt": "2025-10-16T05:15:29.744Z"
+        }
+      ],
+      "activityLog": [
+        {
+          "timestamp": "2025-10-16T05:15:29.724Z",
+          "action": "Lead created from website."
+        },
+        {
+          "timestamp": "2025-10-16T05:15:29.744Z",
+          "action": "2 document(s) uploaded."
+        },
+        {
+          "timestamp": "2025-10-16T05:15:33.953Z",
+          "action": "Contact info added: Devansh, +919723757569"
+        },
+        {
+          "timestamp": "2025-10-16T05:16:20.529Z",
+          "action": "Phone number verified via OTP."
+        },
+        {
+          "timestamp": "2025-10-16T05:17:25.060Z",
+          "action": "AI summary generated."
+        },
+        {
+          "timestamp": "2025-10-16T05:17:38.030Z",
+          "action": "Stage changed from 'Verified Lead' to 'Qualified (Vetting)'.",
+          "user": "Admin User"
+        },
+        {
+          "timestamp": "2025-10-16T05:17:38.830Z",
+          "action": "Stage changed from 'Qualified (Vetting)' to 'Site Survey Scheduled'.",
+          "user": "Admin User"
+        },
+        {
+          "timestamp": "2025-10-16T05:17:39.449Z",
+          "action": "Stage changed from 'Site Survey Scheduled' to 'Proposal Sent'.",
+          "user": "Admin User"
+        },
+        {
+          "timestamp": "2025-10-16T05:17:39.950Z",
+          "action": "Stage changed from 'Proposal Sent' to 'Negotiation/Finance'.",
+          "user": "Admin User"
+        },
+        {
+          "timestamp": "2025-10-16T05:17:40.331Z",
+          "action": "Stage changed from 'Negotiation/Finance' to 'Closed Won / Project'.",
+          "user": "Admin User"
+        },
+        {
+          "timestamp": "2025-10-16T06:05:49.755Z",
+          "action": "AI summary generated."
+        }
+      ],
+      "summary": {
+        "summary": "**Sales Lead Summary: Devansh Patel**\n\n*   **Product Type:** 5KW Rooftop Solar System\n*   **Customer Details:** Devansh Patel (+919723757569, pateldevansh155@gmail.com) from Netrang, BHARUCH. Interested in a 5KW system.\n*   **Sales Stage:** **CLOSED WON / PROJECT** (Hot Lead)\n*   **Verification:** Phone OTP Verified. Aadhar & Pancard documents uploaded.\n\n**Action:** This project is already in the 'Closed Won' stage. Review project plan and proceed with implementation tasks.",
+        "generatedAt": "2025-10-16T06:05:49.755Z"
+      }
+    }
+  ],
+  "forms": {
+    "rooftop": [
+      {
+        "id": "field_rt_1",
+        "type": "text",
+        "name": "DISTRICT",
+        "label": "DISTRICT",
+        "required": true
+      },
+      {
+        "id": "field_rt_2",
+        "type": "text",
+        "name": "TAISIL",
+        "label": "TAISIL",
+        "required": true
+      },
+      {
+        "id": "field_rt_3",
+        "type": "text",
+        "name": "VILLAGE",
+        "label": "VILLAGE",
+        "required": true
+      },
+      {
+        "id": "field_rt_4",
+        "type": "text",
+        "name": "Name",
+        "label": "Name",
+        "required": true
+      },
+      {
+        "id": "field_rt_5",
+        "type": "number",
+        "name": "AADHAR_NUMBER",
+        "label": "AADHAR NUMBER",
+        "required": true
+      },
+      {
+        "id": "field_rt_6",
+        "type": "text",
+        "name": "PANCARD",
+        "label": "PANCARD",
+        "required": true
+      },
+      {
+        "id": "field_rt_7",
+        "type": "text",
+        "name": "CONSUMER_NUMBER",
+        "label": "CONSUMER NUMBER",
+        "required": true
+      },
+      {
+        "id": "field_rt_8",
+        "type": "number",
+        "name": "BANK_ACCOUNT_NO",
+        "label": "BANK ACCOUNT NO.",
+        "required": true
+      },
+      {
+        "id": "field_rt_9",
+        "type": "text",
+        "name": "IFCI_CODE",
+        "label": "IFCI CODE",
+        "required": true
+      },
+      {
+        "id": "field_rt_10",
+        "type": "number",
+        "name": "MOBILE_NO",
+        "label": "MOBILE NO.",
+        "required": true
+      },
+      {
+        "id": "field_rt_11",
+        "type": "select",
+        "name": "KW",
+        "label": "KW",
+        "options": [
+          "1KW",
+          "2KW",
+          "3KW",
+          "5KW",
+          "10KW"
+        ],
+        "required": true
+      },
+      {
+        "id": "field_rt_12",
+        "type": "select",
+        "name": "INVERTER",
+        "label": "INVERTER",
+        "options": [
+          "Standard",
+          "Hybrid"
+        ],
+        "required": true
+      },
+      {
+        "id": "field_rt_13",
+        "type": "image",
+        "name": "AADHAR_IMAGE",
+        "label": "Aadhar Card Image",
+        "required": true
+      },
+      {
+        "id": "field_rt_14",
+        "type": "image",
+        "name": "PANCARD_IMAGE",
+        "label": "PAN Card Image",
+        "required": true
+      }
+    ],
+    "pump": [
+      {
+        "id": "field_p_1",
+        "type": "number",
+        "name": "seasonalEnergyCost",
+        "label": "Current Energy Cost (INR/Season)",
+        "placeholder": "e.g., 10000",
+        "required": true
+      },
+      {
+        "id": "field_p_2",
+        "type": "select",
+        "name": "pumpHP",
+        "label": "Required HP / Existing Pump HP",
+        "options": [
+          "3 HP",
+          "5 HP",
+          "7.5 HP",
+          "10 HP"
+        ],
+        "required": true
+      },
+      {
+        "id": "field_p_3",
+        "type": "select",
+        "name": "waterSource",
+        "label": "Water Source",
+        "options": [
+          "Borehole",
+          "Well",
+          "River",
+          "Pond"
+        ],
+        "required": true
+      }
+    ]
+  },
+  "leadCounter": 5,
+  "settings": {
+    "apiKey": "AIzaSyCeuzEYQT3TzR49CISqTrQ9OM1ALfmp4dk"
+  }
+}
