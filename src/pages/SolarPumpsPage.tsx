@@ -2,7 +2,7 @@ import React from 'react';
 // FIX: Changed to named import to resolve module export errors.
 import { Link } from 'react-router-dom';
 import pumpVideo from '../assets/solar-pump-agriculture.mp4';
-import AnimatedSection from '../components/AnimatedSection.tsx';
+import AnimatedSection from '../components/AnimatedSection';
 import pumpInFieldImage from '../assets/solar-pump-in-field.png';
 
 const SolarPumpsPage: React.FC = () => {
@@ -25,13 +25,13 @@ const SolarPumpsPage: React.FC = () => {
                         <div className="rounded-lg shadow-xl overflow-hidden lg:order-2">
                             <video
                                 className="w-full h-full object-cover"
-                                src={pumpVideo}
                                 autoPlay
                                 loop
                                 muted
                                 playsInline
                                 poster="https://picsum.photos/seed/solar-pump/600/500"
                             >
+                                <source src={pumpVideo} type="video/mp4" />
                                 Your browser does not support the video tag.
                             </video>
                         </div>
