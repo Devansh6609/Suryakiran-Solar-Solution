@@ -1,6 +1,7 @@
 // Authentication service to interact with the backend API
 import { User } from "../types";
-const API_BASE_URL = "http://localhost:3001";
+const API_BASE_URL =
+  import.meta.env.VITE_CRM_API_URL || "http://localhost:3001";
 
 export const login = async (
   email: string,
