@@ -6,81 +6,107 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model User {
-  id              String   @id @default(uuid())
-  email           String   @unique
-  name            String
-  password        String
-  role            String   // "Master" or "Vendor"
-  country         String?
-  state           String?
-  district        String?
-  profileImage    String? // New field for profile image filename
-  assignedLeads   Lead[]   @relation("AssignedToVendor")
+// --- ENUMS ---
 
-  @@map("users")
+enum UserRole {
+  Master
+  Vendor
+}
+
+enum ProductType {
+  rooftop
+  pump
+  Contact_Inquiry
+}
+
+enum PipelineStage {
+  New_Lead
+  Verified_Lead
+  Qualified
+  Site_Survey_Scheduled
+  Proposal_Sent
+  Negotiation
+  Closed_Won
+  Closed_Lost
+}
+
+enum LeadScoreStatus {
+  Hot
+  Warm
+  Cold
+}
+
+
+// --- MODELS ---
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  password     String
+  role         UserRole  @default(Vendor)
+  country      String?
+  state        String?
+  district     String?
+  profileImage String?
+  resetToken   String?   @unique
+
+  assignedLeads Lead[] @relation("VendorLeads")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // This attribute tells Prisma to manage this field automatically
 }
 
 model Lead {
-  id               String   @id @default(uuid())
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  // Contact Info
-  name             String?
-  email            String?
-  phone            String?
-  otpVerified      Boolean  @default(false)
-  
-  // Lead Details
-  productType      String   // 'rooftop', 'pump', or 'Contact Inquiry'
-  pipelineStage    String
-  score            Int      @default(0)
-  scoreStatus      String   // 'Hot', 'Warm', 'Cold'
-  source           String?  // e.g., 'Website', 'Referral'
+  id           String   @id @default(cuid())
+  productType  ProductType
+  name         String?
+  email        String?
+  phone        String?
+  otpVerified  Boolean  @default(false)
 
-  // Dynamic fields from the calculator/contact form
-  customFields     Json
-
-  // Relationships
-  assignedVendorId String?
-  assignedTo       User?    @relation("AssignedToVendor", fields: [assignedVendorId], references: [id])
+  customFields Json @default("{}")
   
-  documents        LeadDocument[]
-  activityLog      LeadActivity[]
+  source       String?
 
-  @@map("leads")
+  pipelineStage PipelineStage @default(New_Lead)
+  score         Int           @default(30)
+  scoreStatus   LeadScoreStatus @default(Cold)
+
+  assignedTo        User?     @relation("VendorLeads", fields: [assignedVendorId], references: [id])
+  assignedVendorId  String?
+
+  documents   Document[]
+  activityLog Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // This attribute tells Prisma to manage this field automatically
 }
 
-model LeadDocument {
-  id          String   @id @default(uuid())
-  leadId      String
-  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  filename    String
-  uploadedAt  DateTime @default(now())
-
-  @@map("lead_documents")
+model Document {
+  id        String   @id @default(cuid())
+  filename  String
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  leadId    String
+  uploadedAt DateTime @default(now())
 }
 
-model LeadActivity {
-  id          String   @id @default(uuid())
-  leadId      String
-  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  timestamp   DateTime @default(now())
-  action      String   // e.g., 'Stage changed to...', 'Note Added'
-  user        String?  // Name of the user who performed the action
-  notes       String?  // For note-specific activities
-
-  @@map("lead_activities")
+model Activity {
+  id        String   @id @default(cuid())
+  action    String
+  user      String?
+  notes     String?
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  leadId    String
+  timestamp DateTime @default(now())
 }
 
 model Setting {
-  key   String @id
+  id    String @id @default(cuid()) // Added a default value generator
+  key   String @unique
   value String
-
-  @@map("settings")
 }
