@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import * as adminService from '../../service/adminService';
+import * as adminService from '../../service/adminService.ts';
 import { User } from '../../types';
-import Card from '../../components/admin/Card';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import CreateAdminModal from '../../components/admin/CreateAdminModal';
+import Card from '../../components/admin/Card.tsx';
+import LoadingSpinner from '../../components/LoadingSpinner.tsx';
+import CreateAdminModal from '../../components/admin/CreateAdminModal.tsx';
 
 const AdminManagementPage: React.FC = () => {
     const [admins, setAdmins] = useState<User[]>([]);
@@ -76,7 +76,7 @@ const AdminManagementPage: React.FC = () => {
                         </table>
                     </div>
                 )}
-                {error && <p className="text-red-500">{error}</p>}
+                {error && <p className="text-red-500 p-4 text-center">{error}</p>}
             </Card>
 
             {isModalOpen && (

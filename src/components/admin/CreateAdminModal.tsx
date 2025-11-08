@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import * as adminService from '../../service/adminService';
+import * as adminService from '../../service/adminService.ts';
 import LoadingSpinner from '../LoadingSpinner';
 
 interface CreateAdminModalProps {
