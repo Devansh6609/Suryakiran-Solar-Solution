@@ -148,7 +148,7 @@ const DashboardPage: React.FC = () => {
                 </div>
             )}
 
-            {chartData && (
+            {chartData && stats && (
                 <>
                     <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <Card className="lg:col-span-2">
@@ -172,7 +172,7 @@ const DashboardPage: React.FC = () => {
                                 <RevenueChart data={chartData.timeSeriesRevenue} />
                             </div>
                         </Card>
-                        <TaskWidget />
+                        <TaskWidget tasks={stats.tasks} />
                     </div>
                 </>
             )}

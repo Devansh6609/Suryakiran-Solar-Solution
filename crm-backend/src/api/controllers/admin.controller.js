@@ -65,7 +65,23 @@ const getDashboardStats = async (req, res) => {
         const verifiedLeads = relevantLeads.filter(l => l.otpVerified).length;
         const projectsWon = relevantLeads.filter(l => l.pipelineStage === 'Closed_Won').length;
         const pipelineValue = `₹ ${(projectsWon * 150000).toLocaleString('en-IN')}`;
-        res.json({ totalLeads, verifiedLeads, projectsWon, pipelineValue });
+        
+        // Calculate task counts from the filtered leads
+        const pendingVerifications = relevantLeads.filter(l => l.pipelineStage === 'New_Lead').length;
+        const activeProposals = relevantLeads.filter(l => l.pipelineStage === 'Proposal_Sent').length;
+        const upcomingSurveys = relevantLeads.filter(l => l.pipelineStage === 'Site_Survey_Scheduled').length;
+
+        res.json({
+            totalLeads,
+            verifiedLeads,
+            projectsWon,
+            pipelineValue,
+            tasks: {
+                pendingVerifications,
+                activeProposals,
+                upcomingSurveys
+            }
+        });
     } catch (e) { res.status(500).json({ message: 'Error fetching stats' }); }
 };
 const getChartData = async (req, res) => {
