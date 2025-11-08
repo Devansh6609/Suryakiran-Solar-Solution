@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import * as adminService from '../../service/adminService.ts';
+import { getMasterAdmins } from '../../service/adminService.ts';
 import { User } from '../../types';
 import Card from '../../components/admin/Card.tsx';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
 import CreateAdminModal from '../../components/admin/CreateAdminModal.tsx';
+import DeleteUserConfirmationModal from '../../components/admin/DeleteUserConfirmationModal.tsx';
+import { useAuth } from '../../contexts/AuthContext.tsx';
 
 const AdminManagementPage: React.FC = () => {
+    const { user: currentUser } = useAuth();
     const [admins, setAdmins] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const fetchAdmins = async () => {
         try {
             setLoading(true);
-            const data = await adminService.getMasterAdmins();
+            const data = await getMasterAdmins();
             setAdmins(data);
         } catch (err) {
             setError('Failed to load admin accounts.');
@@ -28,7 +32,7 @@ const AdminManagementPage: React.FC = () => {
     }, []);
 
     const handleAdminCreated = () => {
-        setIsModalOpen(false);
+        setIsCreateModalOpen(false);
         fetchAdmins(); // Refresh the list after creation
     };
 
@@ -37,7 +41,7 @@ const AdminManagementPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-text-light">Admin Management</h2>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => setIsCreateModalOpen(true)}
                     className="bg-accent-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-accent-blue-hover transition-colors w-full sm:w-auto"
                 >
                     + Add New Master Admin
@@ -58,6 +62,7 @@ const AdminManagementPage: React.FC = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Name</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Email</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Role</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-border-color">
@@ -70,19 +75,40 @@ const AdminManagementPage: React.FC = () => {
                                                 {admin.role}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button
+                                                onClick={() => setUserToDelete(admin)}
+                                                className="text-error-red hover:text-red-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                                disabled={admin.id === currentUser?.id}
+                                                title={admin.id === currentUser?.id ? "You cannot delete your own account." : "Delete this admin"}
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 )}
-                {error && <p className="text-red-500 p-4 text-center">{error}</p>}
+                {error && !loading && <p className="text-red-500 p-4 text-center">{error}</p>}
             </Card>
 
-            {isModalOpen && (
+            {isCreateModalOpen && (
                 <CreateAdminModal
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => setIsCreateModalOpen(false)}
                     onAdminCreated={handleAdminCreated}
+                />
+            )}
+
+            {userToDelete && (
+                <DeleteUserConfirmationModal
+                    userToDelete={userToDelete}
+                    onClose={() => setUserToDelete(null)}
+                    onDeleteSuccess={() => {
+                        setUserToDelete(null);
+                        fetchAdmins(); // Refresh list
+                    }}
                 />
             )}
         </div>

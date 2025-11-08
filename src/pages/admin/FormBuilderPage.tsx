@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import * as adminService from '../../service/adminService';
+import { getFormSchema, updateFormSchema } from '../../service/adminService';
 import { FormSchema, FormField, CalculatorType } from '../../types';
 import FormFieldEditor from '../../components/admin/FormFieldEditor';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
@@ -18,7 +18,7 @@ const FormSection: React.FC<{
     const [editingField, setEditingField] = useState<FormField | null>(null);
 
     useEffect(() => {
-        adminService.getFormSchema(formType)
+        getFormSchema(formType)
             .then(data => setFields(data))
             .catch(() => setError(`Failed to load ${title} form.`))
             .finally(() => setLoading(false));
@@ -52,7 +52,7 @@ const FormSection: React.FC<{
         setIsSaving(true);
         setError(null);
         try {
-            await adminService.updateFormSchema(formType, fields);
+            await updateFormSchema(formType, fields);
             alert(`${title} form saved successfully!`);
         } catch (err) {
             setError(`Failed to save ${title} form.`);

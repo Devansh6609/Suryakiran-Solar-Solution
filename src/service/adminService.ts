@@ -34,9 +34,9 @@ const handleResponse = async (response: Response) => {
 };
 
 // Dashboard
-export const getDashboardStats = async (
+async function getDashboardStats(
   filters: { vendorId?: string; startDate?: string; endDate?: string } = {}
-) => {
+) {
   const params = new URLSearchParams(
     Object.fromEntries(
       Object.entries(filters).filter(([, value]) => value && value !== "all")
@@ -47,16 +47,16 @@ export const getDashboardStats = async (
     { headers: getAuthHeaders() }
   );
   return handleResponse(response);
-};
+}
 
-export const getChartData = async (
+async function getChartData(
   filters: {
     vendorId?: string;
     startDate?: string;
     endDate?: string;
     groupBy?: string;
   } = {}
-) => {
+) {
   const params = new URLSearchParams(
     Object.fromEntries(
       Object.entries(filters).filter(([, value]) => value && value !== "all")
@@ -67,45 +67,42 @@ export const getChartData = async (
     { headers: getAuthHeaders() }
   );
   return handleResponse(response);
-};
+}
 
 // Leads
-export const getLeads = async (filters: Record<string, any> = {}) => {
+async function getLeads(filters: Record<string, any> = {}) {
   const params = new URLSearchParams(filters).toString();
   const response = await fetch(`${API_BASE_URL}/api/admin/leads?${params}`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(response);
-};
+}
 
-export const getLeadDetails = async (leadId: string) => {
+async function getLeadDetails(leadId: string) {
   const response = await fetch(`${API_BASE_URL}/api/admin/leads/${leadId}`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(response);
-};
+}
 
-export const updateLead = async (
-  leadId: string,
-  updateData: Record<string, any>
-) => {
+async function updateLead(leadId: string, updateData: Record<string, any>) {
   const response = await fetch(`${API_BASE_URL}/api/admin/leads/${leadId}`, {
     method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(updateData),
   });
   return handleResponse(response);
-};
+}
 
-export const deleteLead = async (leadId: string) => {
+async function deleteLead(leadId: string) {
   const response = await fetch(`${API_BASE_URL}/api/admin/leads/${leadId}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
   return handleResponse(response);
-};
+}
 
-export const addLeadNote = async (leadId: string, note: string) => {
+async function addLeadNote(leadId: string, note: string) {
   const response = await fetch(
     `${API_BASE_URL}/api/admin/leads/${leadId}/notes`,
     {
@@ -115,9 +112,9 @@ export const addLeadNote = async (leadId: string, note: string) => {
     }
   );
   return handleResponse(response);
-};
+}
 
-export const generateLeadSummary = async (leadId: string) => {
+async function generateLeadSummary(leadId: string) {
   const response = await fetch(
     `${API_BASE_URL}/api/admin/leads/${leadId}/generate-summary`,
     {
@@ -126,9 +123,9 @@ export const generateLeadSummary = async (leadId: string) => {
     }
   );
   return handleResponse(response);
-};
+}
 
-export const uploadDocument = async (leadId: string, file: File) => {
+async function uploadDocument(leadId: string, file: File) {
   const formData = new FormData();
   formData.append("document", file);
   const token = localStorage.getItem("authToken");
@@ -142,23 +139,22 @@ export const uploadDocument = async (leadId: string, file: File) => {
     }
   );
   return handleResponse(response);
-};
+}
 
-// FIX: Add the missing 'performBulkLeadAction' function.
-export const performBulkLeadAction = async (
+async function performBulkLeadAction(
   action: "changeStage" | "assignVendor",
   value: string,
   leadIds: string[]
-) => {
+) {
   const response = await fetch(`${API_BASE_URL}/api/admin/leads/bulk-action`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ action, value, leadIds }),
   });
   return handleResponse(response);
-};
+}
 
-export const importLeads = async (formData: FormData) => {
+async function importLeads(formData: FormData) {
   const token = localStorage.getItem("authToken");
   const response = await fetch(`${API_BASE_URL}/api/admin/leads/import`, {
     method: "POST",
@@ -166,30 +162,77 @@ export const importLeads = async (formData: FormData) => {
     body: formData,
   });
   return handleResponse(response);
-};
+}
 
 // Vendor Management
-export const getVendors = async () => {
+async function getVendors() {
   const response = await fetch(`${API_BASE_URL}/api/admin/vendors`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(response);
-};
+}
 
-export const createVendor = async (vendorData: any) => {
+async function createVendor(vendorData: any) {
   const response = await fetch(`${API_BASE_URL}/api/admin/vendors`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(vendorData),
   });
   return handleResponse(response);
-};
+}
+
+// Admin Management
+async function getMasterAdmins(): Promise<User[]> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/admins`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+}
+
+async function createMasterAdmin(adminData: any): Promise<User> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/admins`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(adminData),
+  });
+  return handleResponse(response);
+}
+
+// --- User Deletion ---
+async function requestUserDeletionOtp(
+  userIdToDelete: string
+): Promise<{ message: string }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/admin/users/request-deletion-otp`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ userIdToDelete }),
+    }
+  );
+  return handleResponse(response);
+}
+
+async function deleteUserWithOtp(
+  userIdToDelete: string,
+  otp: string
+): Promise<{ message: string }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/admin/users/confirm-deletion`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ userIdToDelete, otp }),
+    }
+  );
+  return handleResponse(response);
+}
 
 // Profile
-export const updateProfile = async (updateData: {
+async function updateProfile(updateData: {
   name?: string;
   profileImage?: File;
-}): Promise<User> => {
+}): Promise<User> {
   const formData = new FormData();
   if (updateData.name) {
     formData.append("name", updateData.name);
@@ -208,60 +251,88 @@ export const updateProfile = async (updateData: {
     body: formData,
   });
   return handleResponse(response);
-};
+}
 
 // Location Data
-export const getStates = async () => {
+async function getStates() {
   const response = await fetch(`${API_BASE_URL}/api/locations/states`);
   // This is a public route, so no auth needed
   if (!response.ok) throw new Error("Failed to load states");
   return response.json();
-};
-export const getDistricts = async (state: string) => {
+}
+async function getDistricts(state: string) {
   const response = await fetch(
     `${API_BASE_URL}/api/locations/districts/${state}`
   );
   if (!response.ok) throw new Error("Failed to load districts");
   return response.json();
-};
+}
 
 // Form Builder (publicly accessible schema)
-export const getFormSchema = async (formType: string) => {
+async function getFormSchema(formType: string) {
   const response = await fetch(`${API_BASE_URL}/api/forms/${formType}`);
   if (!response.ok) throw new Error("Failed to load form schema");
   return response.json();
-};
+}
 
-export const updateFormSchema = async (formType: string, schema: any) => {
+async function updateFormSchema(formType: string, schema: any) {
   const response = await fetch(`${API_BASE_URL}/api/forms/${formType}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(schema),
   });
   return handleResponse(response);
-};
+}
 
 // Data Explorer
-export const getAllLeadsData = async () => {
+async function getAllLeadsData() {
   const response = await fetch(`${API_BASE_URL}/api/admin/leads`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(response);
-};
+}
 
 // Settings
-export const getSettings = async () => {
+async function getSettings() {
   const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(response);
-};
+}
 
-export const updateSettings = async (apiKey: string) => {
+async function updateSettings(apiKey: string) {
   const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ apiKey }),
   });
   return handleResponse(response);
+}
+
+export {
+  getDashboardStats,
+  getChartData,
+  getLeads,
+  getLeadDetails,
+  updateLead,
+  deleteLead,
+  addLeadNote,
+  generateLeadSummary,
+  uploadDocument,
+  performBulkLeadAction,
+  importLeads,
+  getVendors,
+  createVendor,
+  getMasterAdmins,
+  createMasterAdmin,
+  requestUserDeletionOtp,
+  deleteUserWithOtp,
+  updateProfile,
+  getStates,
+  getDistricts,
+  getFormSchema,
+  updateFormSchema,
+  getAllLeadsData,
+  getSettings,
+  updateSettings,
 };

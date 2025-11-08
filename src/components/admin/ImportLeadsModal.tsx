@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import * as adminService from '../../service/adminService';
+import { importLeads } from '../../service/adminService';
 import LoadingSpinner from '../LoadingSpinner';
 
 interface ImportLeadsModalProps {
@@ -58,7 +58,7 @@ const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({ onClose, onImportCo
         formData.append('leadsCsv', file);
 
         try {
-            const result = await adminService.importLeads(formData);
+            const result = await importLeads(formData);
             setImportResult(result);
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred during import.');

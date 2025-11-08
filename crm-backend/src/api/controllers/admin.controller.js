@@ -1,10 +1,13 @@
-
 const prisma = require('../../config/prisma');
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
 const { GoogleGenAI } = require('@google/genai');
+const sgMail = require('@sendgrid/mail');
 const { calculateScore, getScoreStatus } = require('../utils/leadScoring');
+
+// In-memory store for OTPs. In production, use Redis or a similar shared store.
+const deletionOtpSessions = new Map();
 
 // Helper function to convert frontend stage names to Prisma enum format
 const normalizeStage = (stage) => {
@@ -295,9 +298,6 @@ const performBulkLeadAction = async (req, res) => {
             data: dataToUpdate,
         });
         
-        // This secondary operation was failing and causing the entire request to error out.
-        // By wrapping it, we ensure the main action (updateMany) is reported as a success
-        // even if logging the activity fails.
         try {
             const activityLogData = leadIds.map(leadId => ({
                 leadId,
@@ -456,7 +456,6 @@ const createMasterAdmin = async (req, res) => {
         const { name, email, password, confirmationPassword } = req.body;
         const requestingAdminId = req.user.id;
         
-        // 1. Verify current admin's password
         const requestingAdmin = await prisma.user.findUnique({ where: { id: requestingAdminId } });
         if (!requestingAdmin) {
             return res.status(401).json({ message: 'Unable to verify your identity. Please log in again.' });
@@ -466,13 +465,11 @@ const createMasterAdmin = async (req, res) => {
             return res.status(401).json({ message: 'Your password confirmation is incorrect.' });
         }
 
-        // 2. Check if new admin's email already exists
         const existing = await prisma.user.findUnique({ where: { email } });
         if (existing) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
 
-        // 3. Create the new Master Admin
         const hashedPassword = await bcrypt.hash(password, 10);
         const newAdmin = await prisma.user.create({
             data: { 
@@ -490,6 +487,106 @@ const createMasterAdmin = async (req, res) => {
     } catch (e) { 
         console.error("Error creating master admin:", e);
         res.status(500).json({ message: 'Error creating master admin.' }); 
+    }
+};
+
+// --- Secure User Deletion ---
+const requestUserDeletionOtp = async (req, res) => {
+    const { userIdToDelete } = req.body;
+    const requestingAdmin = req.user;
+
+    try {
+        if (userIdToDelete === requestingAdmin.id) {
+            return res.status(400).json({ message: "You cannot delete your own account." });
+        }
+
+        const userToDelete = await prisma.user.findUnique({ where: { id: userIdToDelete } });
+        if (!userToDelete) {
+            return res.status(404).json({ message: "User to be deleted not found." });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+        const expires = Date.now() + 10 * 60 * 1000; // 10 minute expiry
+
+        deletionOtpSessions.set(requestingAdmin.id, { otp, userIdToDelete, expires });
+        
+        if (process.env.SENDGRID_API_KEY) {
+            sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+            const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+            if (!fromEmail) {
+                 console.warn('SENDGRID_FROM_EMAIL not set in .env. Falling back to default. This may fail if the sender is not verified in SendGrid.');
+            }
+            const msg = {
+                to: requestingAdmin.email,
+                from: fromEmail || 'devanshagile@gmail.com', // Must be a verified SendGrid sender
+                subject: 'Security Alert: User Deletion Request',
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                        <h2>User Deletion Confirmation</h2>
+                        <p>A request has been made to delete the user account for <strong>${userToDelete.name} (${userToDelete.email})</strong>.</p>
+                        <p>To confirm this action, use the following verification code:</p>
+                        <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px; background-color: #f2f2f2; padding: 10px; border-radius: 5px; text-align: center;">${otp}</p>
+                        <p>This code will expire in 10 minutes. If you did not request this, please secure your account immediately.</p>
+                    </div>
+                `,
+            };
+            await sgMail.send(msg);
+        } else {
+            console.warn(`SENDGRID_API_KEY not found. Deletion OTP for ${requestingAdmin.email} to delete ${userToDelete.email}: ${otp}`);
+        }
+
+        res.json({ message: 'Deletion confirmation code has been sent to your email.' });
+
+    } catch (error) {
+        console.error("Request user deletion OTP error:", error);
+        if (error.code === 'ENOTFOUND') {
+            return res.status(503).json({ message: 'Mail Service Unavailable: Could not connect to the email provider. Please check the server\'s network configuration.' });
+        }
+        res.status(500).json({ message: 'An internal server error occurred while trying to send the email.' });
+    }
+};
+
+const deleteUserWithOtp = async (req, res) => {
+    const { userIdToDelete, otp } = req.body;
+    const requestingAdminId = req.user.id;
+
+    try {
+        const session = deletionOtpSessions.get(requestingAdminId);
+
+        if (!session || session.expires < Date.now() || session.otp !== otp || session.userIdToDelete !== userIdToDelete) {
+            return res.status(400).json({ message: 'Invalid or expired deletion code.' });
+        }
+
+        const userToDelete = await prisma.user.findUnique({ where: { id: userIdToDelete } });
+        if (!userToDelete) {
+            return res.status(404).json({ message: "User to be deleted not found." });
+        }
+
+        if (userToDelete.role === 'Vendor') {
+            // Transaction: Un-assign leads and then delete the vendor.
+            await prisma.$transaction([
+                prisma.lead.updateMany({
+                    where: { assignedVendorId: userIdToDelete },
+                    data: { assignedVendorId: null },
+                }),
+                prisma.user.delete({
+                    where: { id: userIdToDelete },
+                }),
+            ]);
+        } else {
+            // Just delete the Master Admin
+            await prisma.user.delete({
+                where: { id: userIdToDelete },
+            });
+        }
+        
+        deletionOtpSessions.delete(requestingAdminId); // Clean up the session
+
+        res.json({ message: `User ${userToDelete.name} has been successfully deleted.` });
+
+    } catch (error) {
+        console.error("Confirm user deletion error:", error);
+        res.status(500).json({ message: 'An internal server error occurred during deletion.' });
     }
 };
 
@@ -570,5 +667,7 @@ module.exports = {
     importLeads,
     deleteLead,
     getMasterAdmins,
-    createMasterAdmin
+    createMasterAdmin,
+    requestUserDeletionOtp,
+    deleteUserWithOtp,
 };

@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import * as adminService from '../../service/adminService.ts';
+import { createMasterAdmin } from '../../service/adminService.ts';
 import LoadingSpinner from '../LoadingSpinner';
 
 interface CreateAdminModalProps {
@@ -23,7 +23,7 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({ onClose, onAdminCre
         setIsSaving(true);
         setError(null);
         try {
-            await adminService.createMasterAdmin(formData);
+            await createMasterAdmin(formData);
             onAdminCreated();
         } catch (err: any) {
             setError(err.message || 'Failed to create admin.');

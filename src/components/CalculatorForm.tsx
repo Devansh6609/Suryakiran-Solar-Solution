@@ -1,8 +1,8 @@
 import React, { useState, FormEvent, useEffect, Fragment } from 'react';
-import { CalculatorType, FormField, FormFieldType } from '../types';
-import * as crmService from '../service/crmService';
-import * as adminService from '../service/adminService';
-import LoadingSpinner from './LoadingSpinner';
+import { CalculatorType, FormField, FormFieldType } from '../types.ts';
+import { getFormSchema as getCrmFormSchema, createLead, sendOtp, verifyOtp, uploadLeadFile } from '../service/crmService.ts';
+import { getStates, getDistricts } from '../service/adminService.ts';
+import LoadingSpinner from './LoadingSpinner.tsx';
 
 interface CalculatorFormProps {
     type: CalculatorType;
@@ -127,8 +127,8 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue }) =
     useEffect(() => {
         const fetchSchemaAndLocations = async () => {
             try {
-                const schema = await crmService.getFormSchema(type);
-                const fetchedStates = await adminService.getStates();
+                const schema = await getCrmFormSchema(type);
+                const fetchedStates = await getStates();
                 setStates(fetchedStates);
 
                 const stateField = schema.find((f: FormField) => f.name === 'state');
@@ -160,7 +160,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue }) =
 
     useEffect(() => {
         if (formData.state) {
-            adminService.getDistricts(formData.state)
+            getDistricts(formData.state)
                 .then(setDistricts)
                 .catch(() => setApiError("Failed to load districts for the selected state."));
         } else {
@@ -241,12 +241,12 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue }) =
                 productType: type,
                 customFields: { ...formData }
             };
-            const newLead = await crmService.createLead(leadPayload);
+            const newLead = await createLead(leadPayload);
 
             // Upload files if any
             const fileUploadPromises = Object.entries(fileData).map(([fieldName, file]) => {
                 if (file) {
-                    return crmService.uploadLeadFile(newLead.id, fieldName, file);
+                    return uploadLeadFile(newLead.id, fieldName, file);
                 }
                 return Promise.resolve();
             });
@@ -272,7 +272,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue }) =
 
         setIsSubmitting(true);
         try {
-            await crmService.sendOtp(leadId, {
+            await sendOtp(leadId, {
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone
@@ -299,7 +299,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue }) =
 
         setIsSubmitting(true);
         try {
-            const response = await crmService.verifyOtp(leadId, otp);
+            const response = await verifyOtp(leadId, otp);
             setResults(response.results);
             setStep(4);
         } catch (err: any) {

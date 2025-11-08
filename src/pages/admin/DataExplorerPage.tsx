@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import * as adminService from '../../service/adminService';
+import { getAllLeadsData } from '../../service/adminService';
 import { Lead, CalculatorType, PipelineStage } from '../../types';
 import Pagination from '../../components/admin/Pagination';
 import { PIPELINE_STAGES } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
-import Card from '../../components/admin/Card';
-import ImportLeadsModal from '../../components/admin/ImportLeadsModal';
-import { useCrmUpdates } from '../../contexts/CrmUpdatesContext';
+import Card from '../../components/admin/Card.tsx';
+import ImportLeadsModal from '../../components/admin/ImportLeadsModal.tsx';
+import { useCrmUpdates } from '../../contexts/CrmUpdatesContext.tsx';
 
 
 const API_BASE_URL = 'http://localhost:3001';
@@ -71,7 +71,7 @@ const DataExplorerPage: React.FC = () => {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     useEffect(() => {
-        adminService.getAllLeadsData()
+        getAllLeadsData()
             .then(data => setLeads(data))
             .catch(() => setError('Failed to load leads data.'))
             .finally(() => setLoading(false));

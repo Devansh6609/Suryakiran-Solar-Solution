@@ -1,14 +1,14 @@
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Lead, LeadActivity, LeadDocument, PipelineStage, FormField, User } from '../../types';
-import * as adminService from '../../service/adminService';
+import { getLeadDetails, getFormSchema, getVendors, updateLead, addLeadNote, generateLeadSummary, uploadDocument, deleteLead } from '../../service/adminService';
 import { PIPELINE_STAGES } from '../../constants';
-import PipelineTracker from '../../components/admin/PipelineTracker';
-import { useAuth } from '../../contexts/AuthContext';
-import Card from '../../components/admin/Card';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { useCrmUpdates } from '../../contexts/CrmUpdatesContext';
-import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal';
+import PipelineTracker from '../../components/admin/PipelineTracker.tsx';
+import { useAuth } from '../../contexts/AuthContext.tsx';
+import Card from '../../components/admin/Card.tsx';
+import LoadingSpinner from '../../components/LoadingSpinner.tsx';
+import { useCrmUpdates } from '../../contexts/CrmUpdatesContext.tsx';
+import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal.tsx';
 
 
 const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
@@ -54,17 +54,17 @@ const LeadDetailPage: React.FC = () => {
         if (!leadId) return;
         try {
             setLoading(true);
-            const data = await adminService.getLeadDetails(leadId);
+            const data = await getLeadDetails(leadId);
             setLead(data);
 
             if (data.productType && data.productType !== 'Contact Inquiry') {
-                const schemaData: FormField[] = await adminService.getFormSchema(data.productType);
+                const schemaData: FormField[] = await getFormSchema(data.productType);
                 const schemaMap = new Map();
                 schemaData.forEach(field => schemaMap.set(field.name, field.type));
                 setFormSchema(schemaMap);
             }
             if (user?.role === 'Master') {
-                const vendorData = await adminService.getVendors();
+                const vendorData = await getVendors();
                 setVendors(vendorData);
             }
         } catch (err) {
@@ -83,7 +83,7 @@ const LeadDetailPage: React.FC = () => {
     const handleStageChange = async (newStage: PipelineStage) => {
         if (!leadId || !lead) return;
         try {
-            const updatedLead = await adminService.updateLead(leadId, { pipelineStage: newStage });
+            const updatedLead = await updateLead(leadId, { pipelineStage: newStage });
             setLead(updatedLead);
         } catch (err) {
             alert('Failed to update stage. Please try again.');
@@ -93,7 +93,7 @@ const LeadDetailPage: React.FC = () => {
     const handleVendorAssign = async (vendorId: string) => {
         if (!leadId) return;
         try {
-            const updatedLead = await adminService.updateLead(leadId, { assignedVendorId: vendorId });
+            const updatedLead = await updateLead(leadId, { assignedVendorId: vendorId });
             setLead(updatedLead);
         } catch (err) {
             alert('Failed to assign vendor.');
@@ -105,7 +105,7 @@ const LeadDetailPage: React.FC = () => {
         if (!leadId || !newNote.trim()) return;
         setIsSubmittingNote(true);
         try {
-            const updatedLead = await adminService.addLeadNote(leadId, newNote);
+            const updatedLead = await addLeadNote(leadId, newNote);
             setLead(updatedLead);
             setNewNote('');
         } catch (err) {
@@ -120,7 +120,7 @@ const LeadDetailPage: React.FC = () => {
         setIsGeneratingSummary(true);
         setSummaryError(null);
         try {
-            const result = await adminService.generateLeadSummary(leadId);
+            const result = await generateLeadSummary(leadId);
             setSummary(result.summary);
         } catch (err: any) {
             setSummaryError(err.message || "Failed to generate summary. Ensure API key is set in Settings.");
@@ -133,7 +133,7 @@ const LeadDetailPage: React.FC = () => {
         if (!leadId || !e.target.files || e.target.files.length === 0) return;
         const file = e.target.files[0];
         try {
-            const updatedLead = await adminService.uploadDocument(leadId, file);
+            const updatedLead = await uploadDocument(leadId, file);
             setLead(updatedLead);
             alert('File uploaded successfully!');
         } catch (err) {
@@ -148,7 +148,7 @@ const LeadDetailPage: React.FC = () => {
     const handleDeleteConfirm = async () => {
         if (!leadId) return;
         try {
-            await adminService.deleteLead(leadId);
+            await deleteLead(leadId);
             setIsDeleteModalOpen(false);
             triggerUpdate();
             navigate('/admin/leads');

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import Sidebar from '../../components/admin/Sidebar';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCrmUpdates } from '../../contexts/CrmUpdatesContext';
-import Toast from '../../components/admin/Toast';
-import ThemeToggle from '../../components/admin/ThemeToggle';
+import Sidebar from '../../components/admin/Sidebar.tsx';
+import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useCrmUpdates } from '../../contexts/CrmUpdatesContext.tsx';
+import Toast from '../../components/admin/Toast.tsx';
+import ThemeToggle from '../../components/admin/ThemeToggle.tsx';
 
 const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
@@ -81,7 +81,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             const signal = abortControllerRef.current.signal;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/events`, { signal });
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    console.error("No auth token found for SSE subscription.");
+                    return;
+                }
+                const headers = { 'Authorization': `Bearer ${token}` };
+
+                const response = await fetch(`${API_BASE_URL}/api/admin/events`, { headers, signal });
                 if (response.ok) {
                     const event = await response.json();
                     console.log('Received real-time event:', event);

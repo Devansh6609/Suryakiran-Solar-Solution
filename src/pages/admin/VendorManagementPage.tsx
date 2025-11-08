@@ -1,16 +1,19 @@
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import * as adminService from '../../service/adminService';
+import { getVendors, getStates, getDistricts, createVendor } from '../../service/adminService';
 import { User } from '../../types';
 import Card from '../../components/admin/Card.tsx';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
+import DeleteUserConfirmationModal from '../../components/admin/DeleteUserConfirmationModal.tsx';
 
 const VendorManagementPage: React.FC = () => {
     const [vendors, setVendors] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
     const [newVendor, setNewVendor] = useState({ name: '', email: '', password: '', state: '', district: '' });
     const [states, setStates] = useState<string[]>([]);
     const [districts, setDistricts] = useState<string[]>([]);
@@ -21,7 +24,7 @@ const VendorManagementPage: React.FC = () => {
     const fetchVendors = async () => {
         try {
             setLoading(true);
-            const data = await adminService.getVendors();
+            const data = await getVendors();
             setVendors(data);
         } catch (err) {
             setError('Failed to load vendors.');
@@ -32,12 +35,12 @@ const VendorManagementPage: React.FC = () => {
 
     useEffect(() => {
         fetchVendors();
-        adminService.getStates().then(setStates).catch(() => setError("Could not load states"));
+        getStates().then(setStates).catch(() => setError("Could not load states"));
     }, []);
 
     useEffect(() => {
         if (newVendor.state) {
-            adminService.getDistricts(newVendor.state).then(setDistricts).catch(() => setError("Could not load districts"));
+            getDistricts(newVendor.state).then(setDistricts).catch(() => setError("Could not load districts"));
         } else {
             setDistricts([]);
         }
@@ -56,8 +59,8 @@ const VendorManagementPage: React.FC = () => {
         setIsSaving(true);
         setError(null);
         try {
-            await adminService.createVendor(newVendor);
-            setIsModalOpen(false);
+            await createVendor(newVendor);
+            setIsCreateModalOpen(false);
             setNewVendor({ name: '', email: '', password: '', state: '', district: '' });
             await fetchVendors(); // Refresh the list
         } catch (err: any) {
@@ -83,7 +86,7 @@ const VendorManagementPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-text-light">Vendor Management</h2>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => setIsCreateModalOpen(true)}
                     className="bg-accent-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-accent-blue-hover transition-colors w-full sm:w-auto"
                 >
                     + Add Vendor
@@ -113,6 +116,7 @@ const VendorManagementPage: React.FC = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Name</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Email</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Location</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-border-color">
@@ -121,20 +125,24 @@ const VendorManagementPage: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-text-light">{vendor.name}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-text-muted">{vendor.email}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-text-muted">{vendor.district}, {vendor.state}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button onClick={() => setUserToDelete(vendor)} className="text-error-red hover:text-red-700">Delete</button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 )}
-                {error && <p className="text-red-500">{error}</p>}
+                {error && !loading && <p className="text-red-500 p-4 text-center">{error}</p>}
             </Card>
 
-            {isModalOpen && modalRoot && createPortal(
+            {isCreateModalOpen && modalRoot && createPortal(
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 pt-24 pb-12 overflow-y-auto animate-fade-in">
                     <div className="bg-white dark:bg-glass-surface border border-gray-200 dark:border-glass-border p-8 rounded-xl shadow-2xl w-full max-w-lg">
                         <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-text-primary">Create New Vendor</h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Form fields for creating a vendor */}
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">Full Name</label>
                                 <input id="name" type="text" name="name" placeholder="Enter full name" value={newVendor.name} onChange={handleInputChange} required className={modalInputClass} />
@@ -165,7 +173,7 @@ const VendorManagementPage: React.FC = () => {
                             {error && <p className="text-error-red text-sm bg-error-red/10 p-3 rounded-md">{error}</p>}
 
                             <div className="flex justify-end space-x-4 pt-4">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-text-primary dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-text-primary dark:hover:bg-gray-500 transition-colors">Cancel</button>
                                 <button type="submit" disabled={isSaving} className="py-2 px-4 w-36 flex items-center justify-center bg-accent-blue text-white font-semibold rounded-lg hover:bg-accent-blue-hover transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">
                                     {isSaving ? (
                                         <>
@@ -179,6 +187,17 @@ const VendorManagementPage: React.FC = () => {
                     </div>
                 </div>,
                 modalRoot
+            )}
+
+            {userToDelete && (
+                <DeleteUserConfirmationModal
+                    userToDelete={userToDelete}
+                    onClose={() => setUserToDelete(null)}
+                    onDeleteSuccess={() => {
+                        setUserToDelete(null);
+                        fetchVendors(); // Refresh list after successful deletion
+                    }}
+                />
             )}
         </div>
     );

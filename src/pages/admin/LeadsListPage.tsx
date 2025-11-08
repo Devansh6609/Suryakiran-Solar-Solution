@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Lead, LeadScoreStatus, PipelineStage, User } from '../../types';
-import * as adminService from '../../service/adminService';
+import { getLeads, getVendors, getStates, getDistricts, updateLead, performBulkLeadAction } from '../../service/adminService';
 import { PIPELINE_STAGES } from '../../constants';
 import { useCrmUpdates } from '../../contexts/CrmUpdatesContext.tsx';
 import { useAuth } from '../../contexts/AuthContext.tsx';
@@ -52,14 +52,14 @@ const LeadsListPage: React.FC = () => {
 
     useEffect(() => {
         if (user?.role === 'Master') {
-            adminService.getVendors().then(setVendors);
-            adminService.getStates().then(setStates);
+            getVendors().then(setVendors);
+            getStates().then(setStates);
         }
     }, [user]);
 
     useEffect(() => {
         if (filters.state && filters.state !== 'all') {
-            adminService.getDistricts(filters.state).then(setDistricts);
+            getDistricts(filters.state).then(setDistricts);
         } else {
             setDistricts([]);
         }
@@ -75,7 +75,7 @@ const LeadsListPage: React.FC = () => {
                     if (value !== 'all' && value !== '') activeFilters[key] = value;
                 });
 
-                const allLeads = await adminService.getLeads(activeFilters);
+                const allLeads = await getLeads(activeFilters);
 
                 const initialColumns: LeadsByStage = PIPELINE_STAGES.reduce((acc, stage) => ({ ...acc, [stage]: [] }), {} as LeadsByStage);
 
@@ -140,7 +140,7 @@ const LeadsListPage: React.FC = () => {
         setLeadsByStage({ ...leadsByStage, [startStage]: sourceLeads, [endStage]: destLeads });
 
         try {
-            await adminService.updateLead(draggableId, { pipelineStage: endStage });
+            await updateLead(draggableId, { pipelineStage: endStage });
         } catch (error) {
             setError("Failed to update lead stage. Reverting change.");
             setLeadsByStage(originalState);
@@ -183,7 +183,7 @@ const LeadsListPage: React.FC = () => {
     const handleBulkAction = async (action: 'changeStage' | 'assignVendor', value: string) => {
         if (!value || selectedLeads.length === 0) return;
         try {
-            await adminService.performBulkLeadAction(action, value, selectedLeads);
+            await performBulkLeadAction(action, value, selectedLeads);
             setSelectedLeads([]);
             setBulkStage('');
             setBulkVendor('');

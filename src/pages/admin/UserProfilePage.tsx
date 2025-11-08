@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import Card from '../../components/admin/Card';
-import EditProfileModal from '../../components/admin/EditProfileModal';
-import * as adminService from '../../service/adminService';
+import { useAuth } from '../../contexts/AuthContext.tsx';
+import Card from '../../components/admin/Card.tsx';
+import EditProfileModal from '../../components/admin/EditProfileModal.tsx';
+import { updateProfile } from '../../service/adminService';
 
 const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
@@ -20,7 +20,7 @@ const UserProfilePage: React.FC = () => {
 
     const handleSaveProfile = async (updatedData: { name: string; profileImage?: File }) => {
         try {
-            const updatedUser = await adminService.updateProfile(updatedData);
+            const updatedUser = await updateProfile(updatedData);
             updateUser(updatedUser); // Update context
             setIsModalOpen(false); // Close modal on success
         } catch (error) {

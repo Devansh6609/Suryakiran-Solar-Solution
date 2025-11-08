@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import * as adminService from '../../service/adminService';
+import { getSettings, updateSettings } from '../../service/adminService';
 import Card from '../../components/admin/Card.tsx';
 import ThemeToggle from '../../components/admin/ThemeToggle.tsx';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
@@ -16,7 +16,7 @@ const SettingsPage: React.FC = () => {
         const fetchSettings = async () => {
             try {
                 setIsLoading(true);
-                const settings = await adminService.getSettings();
+                const settings = await getSettings();
                 setApiKeyIsSet(settings.apiKeyIsSet);
             } catch (err) {
                 setError('Failed to load settings status.');
@@ -37,7 +37,7 @@ const SettingsPage: React.FC = () => {
         setError(null);
         setSuccessMessage(null);
         try {
-            await adminService.updateSettings(apiKey);
+            await updateSettings(apiKey);
             setSuccessMessage('API Key saved successfully! AI features are now active.');
             setApiKeyIsSet(true);
             setApiKey(''); // Clear the input field for security

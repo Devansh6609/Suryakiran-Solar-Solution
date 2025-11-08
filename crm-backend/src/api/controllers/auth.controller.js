@@ -40,10 +40,14 @@ const requestPasswordReset = async (req, res) => {
             // If SendGrid API key is configured, send a real email.
             if (process.env.SENDGRID_API_KEY) {
                 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+                const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+                if (!fromEmail) {
+                    console.warn('SENDGRID_FROM_EMAIL not set in .env. Falling back to default. This may fail if the sender is not verified in SendGrid.');
+                }
                 const msg = {
                     to: email,
                     // IMPORTANT: This 'from' email MUST be a verified sender in your SendGrid account.
-                    from: 'devanshagile@gmail.com', 
+                    from: fromEmail || 'devanshagile@gmail.com', 
                     subject: 'SuryaKiran CRM: Password Reset Request',
                     html: `
                         <div style="font-family: sans-serif; padding: 20px; color: #333;">
@@ -71,6 +75,9 @@ const requestPasswordReset = async (req, res) => {
         console.error("Forgot password error:", error);
         if (error.response) {
             console.error(error.response.body)
+        }
+        if (error.code === 'ENOTFOUND') {
+            return res.status(503).json({ message: 'Mail Service Unavailable: Could not connect to the email provider. Please check network settings.' });
         }
         res.status(500).json({ message: 'An internal server error occurred.' });
     }

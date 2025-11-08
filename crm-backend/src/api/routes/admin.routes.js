@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -55,6 +53,10 @@ router.post('/vendors', masterOnlyMiddleware, adminController.createVendor);
 // --- Admin Management (Master Only) ---
 router.get('/admins', masterOnlyMiddleware, adminController.getMasterAdmins);
 router.post('/admins', masterOnlyMiddleware, adminController.createMasterAdmin);
+
+// --- Secure User Deletion (Master Only) ---
+router.post('/users/request-deletion-otp', masterOnlyMiddleware, adminController.requestUserDeletionOtp);
+router.post('/users/confirm-deletion', masterOnlyMiddleware, adminController.deleteUserWithOtp);
 
 // --- User Profile ---
 router.patch('/profile', upload.single('profileImage'), adminController.updateProfile);

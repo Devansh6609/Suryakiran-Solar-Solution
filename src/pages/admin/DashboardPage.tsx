@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lead, User } from '../../types';
-import * as adminService from '../../service/adminService';
+import { getVendors, getDashboardStats, getChartData } from '../../service/adminService';
 import StatCard from '../../components/admin/StatCard.tsx';
 import { useCrmUpdates } from '../../contexts/CrmUpdatesContext.tsx';
 import Card from '../../components/admin/Card.tsx';
@@ -57,7 +57,7 @@ const DashboardPage: React.FC = () => {
     // Fetch vendors for master admin's filter dropdown
     useEffect(() => {
         if (user?.role === 'Master') {
-            adminService.getVendors().then(setVendors).catch(err => setError('Could not load vendors.'));
+            getVendors().then(setVendors).catch(err => setError('Could not load vendors.'));
         }
     }, [user]);
 
@@ -66,8 +66,8 @@ const DashboardPage: React.FC = () => {
             try {
                 setLoading(true);
                 const [statsData, chartsData] = await Promise.all([
-                    adminService.getDashboardStats(filters),
-                    adminService.getChartData({ ...filters, groupBy })
+                    getDashboardStats(filters),
+                    getChartData({ ...filters, groupBy })
                 ]);
                 setStats(statsData);
                 setChartData(chartsData);
