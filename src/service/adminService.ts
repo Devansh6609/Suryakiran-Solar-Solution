@@ -276,7 +276,7 @@ async function getFormSchema(formType: string) {
 }
 
 async function updateFormSchema(formType: string, schema: any) {
-  const response = await fetch(`${API_BASE_URL}/api/forms/${formType}`, {
+  const response = await fetch(`${API_BASE_URL}/api/admin/forms/${formType}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(schema),

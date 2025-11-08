@@ -6,7 +6,7 @@ import { PIPELINE_STAGES } from '../../constants';
 import PipelineTracker from '../../components/admin/PipelineTracker.tsx';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import Card from '../../components/admin/Card.tsx';
-import LoadingSpinner from '../../components/LoadingSpinner.tsx';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import { useCrmUpdates } from '../../contexts/CrmUpdatesContext.tsx';
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal.tsx';
 
@@ -213,6 +213,9 @@ const LeadDetailPage: React.FC = () => {
                     <Card>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-text-light mb-4">Application Details</h3>
                         <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
+                            <DetailItem label="Name" value={lead.name} />
+                            <DetailItem label="Email" value={lead.email} />
+                            <DetailItem label="Phone" value={lead.phone} />
                             <DetailItem label="Product Type" value={lead.productType} />
                             {/* FIX: The 'location' property does not exist on the Lead type. Use customFields.district instead. */}
                             <DetailItem label="Location (District)" value={lead.customFields?.district} />

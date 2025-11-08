@@ -74,7 +74,24 @@ const formSchemas = {
 // --- Controllers ---
 const getStates = (req, res) => res.json(Object.keys(locations.India));
 const getDistricts = (req, res) => res.json(locations.India[req.params.state] || []);
-const getFormSchema = (req, res) => res.json(formSchemas[req.params.formType] || []);
+const getFormSchema = async (req, res) => {
+    const { formType } = req.params;
+    if (!['rooftop', 'pump'].includes(formType)) {
+        return res.status(400).json([]);
+    }
+    try {
+        const schemaSetting = await prisma.setting.findUnique({
+            where: { key: `form_schema_${formType}` }
+        });
+        if (schemaSetting && schemaSetting.value) {
+            return res.json(JSON.parse(schemaSetting.value));
+        }
+    } catch (error) {
+        console.error(`Error fetching form schema from DB for ${formType}, falling back to default.`, error);
+    }
+    // Fallback to hardcoded schema if DB fetch fails or setting doesn't exist
+    res.json(formSchemas[formType] || []);
+};
 
 const createLead = async (req, res) => {
     const { productType, customFields } = req.body;

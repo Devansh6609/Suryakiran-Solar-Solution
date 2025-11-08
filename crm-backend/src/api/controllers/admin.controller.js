@@ -621,8 +621,27 @@ const saveSettings = async (req, res) => {
     res.json({ message: 'API key saved' });
 };
 const updateFormSchema = async (req, res) => {
-    // Not implemented as it requires DB schema changes or JSONB storage
-    res.json({ message: 'Form schema updated successfully (mock)' });
+    const { formType } = req.params;
+    const schema = req.body;
+
+    if (!['rooftop', 'pump'].includes(formType)) {
+        return res.status(400).json({ message: 'Invalid form type.' });
+    }
+    if (!Array.isArray(schema)) {
+        return res.status(400).json({ message: 'Invalid schema format. Expected an array of fields.' });
+    }
+
+    try {
+        await prisma.setting.upsert({
+            where: { key: `form_schema_${formType}` },
+            update: { value: JSON.stringify(schema) },
+            create: { key: `form_schema_${formType}`, value: JSON.stringify(schema) }
+        });
+        res.json({ message: 'Form schema updated successfully' });
+    } catch (error) {
+        console.error(`Error updating form schema for ${formType}:`, error);
+        res.status(500).json({ message: 'Failed to save form schema.' });
+    }
 };
 const generateLeadSummary = async (req, res) => {
     try {
