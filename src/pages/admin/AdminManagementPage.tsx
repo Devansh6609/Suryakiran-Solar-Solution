@@ -1,0 +1,92 @@
+import React, { useState, useEffect } from 'react';
+import * as adminService from '../../service/adminService';
+import { User } from '../../types';
+import Card from '../../components/admin/Card';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import CreateAdminModal from '../../components/admin/CreateAdminModal';
+
+const AdminManagementPage: React.FC = () => {
+    const [admins, setAdmins] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const fetchAdmins = async () => {
+        try {
+            setLoading(true);
+            const data = await adminService.getMasterAdmins();
+            setAdmins(data);
+        } catch (err) {
+            setError('Failed to load admin accounts.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAdmins();
+    }, []);
+
+    const handleAdminCreated = () => {
+        setIsModalOpen(false);
+        fetchAdmins(); // Refresh the list after creation
+    };
+
+    return (
+        <div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-text-light">Admin Management</h2>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-accent-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-accent-blue-hover transition-colors w-full sm:w-auto"
+                >
+                    + Add New Master Admin
+                </button>
+            </div>
+
+            <Card>
+                {loading && (
+                    <div className="flex justify-center p-8">
+                        <LoadingSpinner />
+                    </div>
+                )}
+                {!loading && !error && (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-border-color">
+                            <thead className="bg-gray-50 dark:bg-secondary-background/50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Email</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-muted uppercase tracking-wider">Role</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-border-color">
+                                {admins.map(admin => (
+                                    <tr key={admin.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-text-light">{admin.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-text-muted">{admin.email}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-text-muted">
+                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-secondary-cyan/20 text-secondary-cyan">
+                                                {admin.role}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+                {error && <p className="text-red-500">{error}</p>}
+            </Card>
+
+            {isModalOpen && (
+                <CreateAdminModal
+                    onClose={() => setIsModalOpen(false)}
+                    onAdminCreated={handleAdminCreated}
+                />
+            )}
+        </div>
+    );
+};
+
+export default AdminManagementPage;

@@ -2,7 +2,7 @@ import React from 'react';
 // FIX: Changed to named import to resolve module export errors.
 import { Link } from 'react-router-dom';
 import rooftopVideo from '../assets/rooftop-solar-installation.mp4';
-import AnimatedSection from '../components/AnimatedSection.tsx';
+import AnimatedSection from '../components/AnimatedSection';
 import mehraResidenceImage from '../assets/case-study-mehra-residence.png';
 
 const RooftopSolarPage: React.FC = () => {

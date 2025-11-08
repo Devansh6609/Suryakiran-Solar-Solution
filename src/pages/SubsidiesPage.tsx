@@ -1,6 +1,6 @@
 import React from 'react';
-import AnimatedSection from '../components/AnimatedSection.tsx';
-import TimelineSection from '../components/TimelineSection.tsx';
+import AnimatedSection from '../components/AnimatedSection';
+import TimelineSection from '../components/TimelineSection';
 
 const pmSuryaGharProcess = [
     { id: 1, title: 'Register on Portal', description: 'Begin by registering on the National Portal for Rooftop Solar. You will need your latest electricity bill and other basic household details to start the process.', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> },

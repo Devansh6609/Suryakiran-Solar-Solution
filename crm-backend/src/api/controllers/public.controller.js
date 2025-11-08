@@ -1,5 +1,12 @@
 const prisma = require('../../config/prisma');
+const axios = require('axios');
 const { calculateScore, getScoreStatus } = require('../utils/leadScoring');
+
+// In-memory store for OTP session IDs. 
+// Note: This is not suitable for a production environment with multiple server instances.
+// For production, a shared store like Redis would be recommended.
+const otpSessions = new Map();
+
 
 // --- Mock Data (to be moved to DB eventually) ---
 const locations = {
@@ -29,15 +36,15 @@ const locations = {
         "Meghalaya": ["East Garo Hills", "East Jaintia Hills", "East Khasi Hills", "North Garo Hills", "Ri Bhoi", "South Garo Hills", "South West Garo Hills", "South West Khasi Hills", "West Garo Hills", "West Jaintia Hills", "West Khasi Hills"],
         "Mizoram": ["Aizawl", "Champhai", "Hnahthial", "Khawzawl", "Kolasib", "Lawngtlai", "Lunglei", "Mamit", "Saiha", "Saitual", "Serchhip"],
         "Nagaland": ["Dimapur", "Kiphire", "Kohima", "Longleng", "Mokokchung", "Mon", "Peren", "Phek", "Tuensang", "Wokha", "Zunheboto"],
-        "Odisha": ["Angul", "Balangir", "Balasore", "Bargarh", "Bhadrak", "Boudh", "Cuttack", "Deogarh", "Dhenkanal", "Gajapati", "Ganjam", "Jagatsinghpur", "Jajpur", "Jharsuguda", "Kalahandi", "Kandhamal", "Kendrapara", "Kendujhar", "Khordha", "Koraput", "Malkangiri", "Mayurbhanj", "Nabarangpur", "Nayagarh", "Nuapada", "Puri", "Rayagada", "Sambalpur", "Sonepur", "Sundargarh"],
+        "Odisha": ["Angul", "Balangir", "Balasore", "Bargarh", "Bhadrak", "Boudh", "Cuttack", "Deogarh", "Dhenkanal", "Gajapati", "Ganjam", "Jagatsinghpur", "Jajpur", "Jharsugada", "Kalahandi", "Kandhamal", "Kendrapara", "Kendujhar", "Khordha", "Koraput", "Malkangiri", "Mayurbhanj", "Nabarangpur", "Nayagarh", "Nuapada", "Puri", "Rayagada", "Sambalpur", "Sonepur", "Sundargarh"],
         "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam"],
         "Punjab": ["Amritsar", "Barnala", "Bathinda", "Faridkot", "Fatehgarh Sahib", "Fazilka", "Ferozepur", "Gurdaspur", "Hoshiarpur", "Jalandhar", "Kapurthala", "Ludhiana", "Mansa", "Moga", "Muktsar", "Pathankot", "Patiala", "Rupnagar", "Sahibzada Ajit Singh Nagar", "Sangrur", "Shahid Bhagat Singh Nagar", "Sri Muktsar Sahib", "Tarn Taran"],
-        "Rajasthan": ["Ajmer", "Alwar", "Banswara", "Baran", "Barmer", "Bharatpur", "Bhilwara", "Bikaner", "Bundi", "Chittorgarh", "Churu", "Dausa", "Dholpur", "Dungarpur", "Hanumangarh", "Jaipur", "Jaisalmer", "Jalore", "Jhalawar", "Jhunjhunu", "Jodhpur", "Karauli", "Kota", "Nagaur", "Pali", "Pratapgarh", "Rajsamand", "Sawai Madhopur", "Sikar", "Sirohi", "Sri Ganganagar", "Tonk", "Udaipur"],
+        "Rajasthan": ["Ajmer", "Alwar", "Banswara", "Baran", "Barmer", "Bharatpur", "Bhilwara", "Bikaner", "Bundi", "Chittorgarh", "Churu", "Dausa", "Dholpur", "Dungarpur", "Hanumangad", "Jaipur", "Jaisalmer", "Jalore", "Jhalawar", "Jhunjhunu", "Jodhpur", "Karauli", "Kota", "Nagaur", "Pali", "Pratapgarh", "Rajsamand", "Sawai Madhopur", "Sikar", "Sirohi", "Sri Ganganagar", "Tonk", "Udaipur"],
         "Sikkim": ["East Sikkim", "North Sikkim", "South Sikkim", "West Sikkim"],
         "Tamil Nadu": ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"],
         "Telangana": ["Adilabad", "Bhadradri Kothagudem", "Hyderabad", "Jagtial", "Jangaon", "Jayashankar Bhupalpally", "Jogulamba Gadwal", "Kamareddy", "Karimnagar", "Khammam", "Komaram Bheem", "Mahabubabad", "Mahabubnagar", "Mancherial", "Medak", "Medchal-Malkajgiri", "Mulugu", "Nagarkurnool", "Nalgonda", "Narayanpet", "Nirmal", "Nizamabad", "Peddapalli", "Rajanna Sircilla", "Ranga Reddy", "Sangareddy", "Siddipet", "Suryapet", "Vikarabad", "Wanaparthy", "Warangal Rural", "Warangal Urban", "Yadadri Bhuvanagiri"],
         "Tripura": ["Dhalai", "Gomati", "Khowai", "North Tripura", "Sepahijala", "South Tripura", "Unakoti", "West Tripura"],
-        "Uttar Pradesh": ["Agra", "Aligarh", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Ayodhya", "Azamgarh", "Baghpat", "Bahraich", "Ballia", "Balrampur", "Banda", "Barabanki", "Bareilly", "Basti", "Bhadohi", "Bijnor", "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", "Etawah", "Farrukhabad", "Fatehpur", "Firozabad", "Gautam Buddha Nagar", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur", "Hapur", "Hardoi", "Hathras", "Jalaun", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar", "Kasganj", "Kaushambi", "Kheri", "Kushinagar", "Lalitpur", "Lucknow", "Maharajganj", "Mahoba", "Mainpuri", "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Prayagraj", "Raebareli", "Rampur", "Saharanpur", "Sambhal", "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shravasti", "Siddharthnagar", "Sitapur", "Sonbhadra", "Sultanpur", "Unnao", "Varanasi"],
+        "Uttar Pradesh": ["Agra", "Aligarh", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Ayodhya", "Azamgarh", "Baghpat", "Bahraich", "Ballia", "Balrampur", "Banda", "Barabanki", "Bareilly", "Basti", "Bhadohi", "Bijnor", "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", "Etawah", "Farrukhabad", "Fatehpur", "Firozabad", "Gautam Buddha Nagar", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur", "Hapur", "Hardoi", "Hathras", "Jalaun", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar", "Kasganj", "Kaushambi", "Kheri", "Kushinagar", "Lalitpur", "Lucknow", "Maharajganj", "Mahoba", "Mainpuri", "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Prayagraj", "Raebareli", "Rampur", "Saharanpur", "Sambhal", "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shravasti", "Siddharthnagar", "Sitapur", "Sonbadra", "Sultanpur", "Unnao", "Varanasi"],
         "Uttarakhand": ["Almora", "Bageshwar", "Chamoli", "Champawat", "Dehradun", "Haridwar", "Nainital", "Pauri Garhwal", "Pithoragarh", "Rudraprayag", "Tehri Garhwal", "Udham Singh Nagar", "Uttarkashi"],
         "West Bengal": ["Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Dakshin Dinajpur", "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Jhargram", "Kalimpong", "Kolkata", "Malda", "Murshidabad", "Nadia", "North 24 Parganas", "Paschim Bardhaman", "Paschim Medinipur", "Purba Bardhaman", "Purba Medinipur", "Purulia", "South 24 Parganas", "Uttar Dinajpur"]
     }
@@ -76,7 +83,7 @@ const createLead = async (req, res) => {
         const newLeadData = {
             productType,
             customFields: customFields || {},
-            pipelineStage: 'New Lead',
+            pipelineStage: 'New_Lead',
             activityLog: { create: { action: 'Lead Created via Website', user: 'System' } },
             source: sources[Math.floor(Math.random() * sources.length)],
         };
@@ -105,7 +112,26 @@ const createLead = async (req, res) => {
 const sendOtp = async (req, res) => {
     const { leadId } = req.params;
     const { name, email, phone } = req.body;
+
     try {
+        // --- DUPLICATE CHECK ---
+        const existingLead = await prisma.lead.findFirst({
+            where: {
+                OR: [
+                    { email: { equals: email, mode: 'insensitive' } }, // Case-insensitive check
+                    { phone: phone }
+                ],
+                // Exclude the current lead from the check, in case user goes back and resubmits
+                id: { not: leadId }
+            }
+        });
+
+        if (existingLead) {
+            // If a duplicate is found, return a 409 Conflict status.
+            return res.status(409).json({ message: 'A lead with this email or phone number already exists.' });
+        }
+        // --- END DUPLICATE CHECK ---
+
         const lead = await prisma.lead.findUnique({ where: { id: leadId } });
         if (!lead) return res.status(404).json({ message: 'Lead not found.' });
 
@@ -121,24 +147,80 @@ const sendOtp = async (req, res) => {
                 activityLog: { create: { action: 'Contact info submitted, OTP sent', user: 'System' } },
             },
         });
-        // Mock OTP sending
-        res.json({ message: 'OTP sent (mock)' });
+
+        // Check for 2Factor config and fallback to mock if missing
+        if (!process.env.TWOFACTOR_API_KEY) {
+            console.warn("2Factor API key missing. Falling back to mock OTP sending.");
+            otpSessions.set(leadId, 'mock-session-id'); // Store a mock session for mock verification
+            return res.json({ message: 'OTP sent (mock)' });
+        }
+
+        // --- 2Factor Integration ---
+        const apiKey = process.env.TWOFACTOR_API_KEY;
+        const templateName = process.env.TWOFACTOR_TEMPLATE_NAME;
+        let url;
+
+        // If a custom template is defined in .env, use it. Otherwise, fallback to AUTOGEN.
+        if (templateName) {
+            // Template `XXXX` implies a 4-digit OTP.
+            const otp = Math.floor(1000 + Math.random() * 9000).toString();
+            url = `https://2factor.in/API/V1/${apiKey}/SMS/${phone}/${otp}/${templateName}`;
+        } else {
+            console.warn("TWOFACTOR_TEMPLATE_NAME not set. Falling back to AUTOGEN endpoint.");
+            url = `https://2factor.in/API/V1/${apiKey}/SMS/${phone}/AUTOGEN`;
+        }
+        
+        const twoFactorResponse = await axios.get(url);
+
+        if (twoFactorResponse.data.Status !== 'Success') {
+            throw new Error(twoFactorResponse.data.Details || '2Factor: Failed to send OTP.');
+        }
+
+        const sessionId = twoFactorResponse.data.Details;
+        otpSessions.set(leadId, sessionId); // Store session ID for verification
+        
+        res.json({ message: 'OTP sent successfully' });
+
     } catch (error) {
-        res.status(500).json({ message: 'Failed to send OTP.' });
+        console.error("sendOtp error:", error.response ? error.response.data : error.message);
+        res.status(500).json({ message: error.response?.data?.message || 'Failed to send OTP.' });
     }
 };
 
 const verifyOtp = async (req, res) => {
     const { leadId } = req.params;
     const { otp } = req.body;
-    if (otp !== '1234') { // Mock OTP check
-        return res.status(400).json({ message: 'Invalid OTP' });
-    }
     try {
         const lead = await prisma.lead.findUnique({ where: { id: leadId } });
         if (!lead) return res.status(404).json({ message: 'Lead not found.' });
+
+        // Fallback to mock verification if 2Factor key is not set
+        if (!process.env.TWOFACTOR_API_KEY) {
+            console.warn("2Factor API key missing. Falling back to mock OTP verification.");
+            if (otp !== '1234') {
+                return res.status(400).json({ message: 'Invalid OTP' });
+            }
+        } else {
+             // --- 2Factor Verification ---
+            const sessionId = otpSessions.get(leadId);
+            if (!sessionId) {
+                return res.status(400).json({ message: 'OTP session not found or expired. Please request a new OTP.' });
+            }
+
+            const apiKey = process.env.TWOFACTOR_API_KEY;
+            const url = `https://2factor.in/API/V1/${apiKey}/SMS/VERIFY/${sessionId}/${otp}`;
+            
+            const twoFactorResponse = await axios.get(url);
+
+            if (twoFactorResponse.data.Status !== 'Success') {
+                return res.status(400).json({ message: twoFactorResponse.data.Details || 'Invalid OTP. Please try again.' });
+            }
+        }
         
-        const updatedData = { otpVerified: true, pipelineStage: 'Verified Lead' };
+        otpSessions.delete(leadId); // Clean up session ID after successful verification
+
+        // --- If verification is successful (either real or mock) ---
+        const updatedData = { otpVerified: true, pipelineStage: 'Verified_Lead' };
         const score = calculateScore({ ...lead, ...updatedData });
         updatedData.score = score;
         updatedData.scoreStatus = getScoreStatus(score);
@@ -158,7 +240,9 @@ const verifyOtp = async (req, res) => {
 
         res.json({ message: 'Verification successful', results });
     } catch (error) {
-        res.status(500).json({ message: 'Failed to verify OTP.' });
+        otpSessions.delete(leadId); // Clean up session on error too
+        console.error("verifyOtp error:", error.response ? error.response.data : error.message);
+        res.status(500).json({ message: error.response?.data?.message || 'Failed to verify OTP.' });
     }
 };
 

@@ -25,7 +25,12 @@ export const createLead = async (leadData: Record<string, any>) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(leadData),
   });
-  if (!response.ok) throw new Error("Failed to create lead.");
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: "Failed to create lead." }));
+    throw new Error(errorData.message || "Failed to create lead.");
+  }
   return response.json();
 };
 
@@ -43,7 +48,12 @@ export const sendOtp = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(contactData),
   });
-  if (!response.ok) throw new Error("Failed to send OTP.");
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: "Failed to send OTP." }));
+    throw new Error(errorData.message || "Failed to send OTP.");
+  }
   return response.json();
 };
 
@@ -91,6 +101,11 @@ export const uploadLeadFile = async (
       body: formData, // Browser handles Content-Type for FormData
     }
   );
-  if (!response.ok) throw new Error(`Failed to upload ${file.name}.`);
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: `Failed to upload ${file.name}.` }));
+    throw new Error(errorData.message || `Failed to upload ${file.name}.`);
+  }
   return response.json();
 };

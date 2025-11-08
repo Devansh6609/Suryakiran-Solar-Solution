@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import * as crmService from '../service/crmService';
-import LoadingSpinner from '../components/LoadingSpinner.tsx';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const ContactPage: React.FC = () => {
     const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
@@ -52,6 +52,10 @@ const ContactPage: React.FC = () => {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        if (!otp || otp.length !== 4) {
+            setError("Please enter a valid 4-digit OTP.");
+            return;
+        }
         if (!leadId) {
             setError("Lead ID not found. Please try again.");
             return;
@@ -126,7 +130,7 @@ const ContactPage: React.FC = () => {
                         {isOtpSent && (
                             <>
                                 <div className="text-center">
-                                    <p className="text-sm text-text-secondary">Enter the 4-digit OTP sent to {formData.phone}. (Hint: 1234)</p>
+                                    <p className="text-sm text-text-secondary">Enter the 4-digit OTP sent to {formData.phone}.</p>
                                 </div>
                                 <input type="text" name="otp" placeholder="Enter 4-Digit OTP" required value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full px-3 py-2 border border-glass-border rounded-md bg-night-sky/80 text-white placeholder-gray-400" />
                                 <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center font-bold bg-primary-green text-white py-3 px-4 rounded-lg shadow-lg hover:bg-green-800 transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">

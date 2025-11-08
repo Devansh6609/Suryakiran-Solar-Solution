@@ -6,6 +6,24 @@ const path = require('path');
 const { GoogleGenAI } = require('@google/genai');
 const { calculateScore, getScoreStatus } = require('../utils/leadScoring');
 
+// Helper function to convert frontend stage names to Prisma enum format
+const normalizeStage = (stage) => {
+    if (stage === 'Closed Won / Project') return 'Closed_Won';
+    if (stage === 'Negotiation/Finance') return 'Negotiation';
+    if (stage === 'Qualified (Vetting)') return 'Qualified';
+    return stage.replace(/ /g, '_');
+};
+
+// Helper function to convert DB enum names back to display format
+const denormalizeStage = (stage) => {
+    if (!stage) return 'New Lead'; // Default/fallback
+    if (stage === 'Closed_Won') return 'Closed Won / Project';
+    if (stage === 'Negotiation') return 'Negotiation/Finance';
+    if (stage === 'Qualified') return 'Qualified (Vetting)';
+    return stage.replace(/_/g, ' ');
+}
+
+
 // --- SSE (Real-time updates) ---
 let clients = [];
 const sendEventsToAll = (data) => {
@@ -42,7 +60,7 @@ const getDashboardStats = async (req, res) => {
         const relevantLeads = await prisma.lead.findMany({ where });
         const totalLeads = relevantLeads.length;
         const verifiedLeads = relevantLeads.filter(l => l.otpVerified).length;
-        const projectsWon = relevantLeads.filter(l => l.pipelineStage === 'Closed Won / Project').length;
+        const projectsWon = relevantLeads.filter(l => l.pipelineStage === 'Closed_Won').length;
         const pipelineValue = `₹ ${(projectsWon * 150000).toLocaleString('en-IN')}`;
         res.json({ totalLeads, verifiedLeads, projectsWon, pipelineValue });
     } catch (e) { res.status(500).json({ message: 'Error fetching stats' }); }
@@ -81,7 +99,7 @@ const getChartData = async (req, res) => {
             }
 
             leadsByTime[key] = (leadsByTime[key] || 0) + 1;
-            if (lead.pipelineStage === 'Closed Won / Project') {
+            if (lead.pipelineStage === 'Closed_Won') {
                 revenueByTime[key] = (revenueByTime[key] || 0) + 150000;
             }
         });
@@ -138,7 +156,11 @@ const getLeads = async (req, res) => {
     }
     try {
         const leads = await prisma.lead.findMany({ where, include: { assignedTo: { select: { name: true } } }, orderBy: { createdAt: 'desc' } });
-        const leadsWithVendorInfo = leads.map(l => ({ ...l, assignedVendorName: l.assignedTo?.name || 'Unassigned' }));
+        const leadsWithVendorInfo = leads.map(l => ({ 
+            ...l, 
+            pipelineStage: denormalizeStage(l.pipelineStage),
+            assignedVendorName: l.assignedTo?.name || 'Unassigned' 
+        }));
         res.json(leadsWithVendorInfo);
     } catch (e) { res.status(500).json({ message: 'Error fetching leads' }); }
 };
@@ -147,7 +169,11 @@ const getLeadDetails = async (req, res) => {
         const lead = await prisma.lead.findUnique({ where: { id: req.params.id }, include: { assignedTo: true, activityLog: true, documents: true } });
         if (!lead) return res.status(404).json({ message: 'Lead not found' });
         if (req.user.role === 'Vendor' && lead.assignedVendorId !== req.user.id) return res.status(403).json({ message: 'Access denied' });
-        const leadWithDetails = { ...lead, assignedVendorName: lead.assignedTo?.name || 'Unassigned' };
+        const leadWithDetails = { 
+            ...lead, 
+            pipelineStage: denormalizeStage(lead.pipelineStage),
+            assignedVendorName: lead.assignedTo?.name || 'Unassigned' 
+        };
         res.json(leadWithDetails);
     } catch (e) { res.status(500).json({ message: 'Error fetching lead details' }); }
 };
@@ -160,7 +186,7 @@ const updateLead = async (req, res) => {
         const dataToUpdate = {};
         const activityLogs = [];
         if (pipelineStage) {
-            dataToUpdate.pipelineStage = pipelineStage;
+            dataToUpdate.pipelineStage = normalizeStage(pipelineStage);
             activityLogs.push({ action: `Stage changed to ${pipelineStage}`, user: req.user.name });
         }
         if (assignedVendorId !== undefined) {
@@ -175,7 +201,11 @@ const updateLead = async (req, res) => {
             data: dataToUpdate,
             include: { assignedTo: true, activityLog: true, documents: true }
         });
-        const leadWithDetails = { ...updatedLead, assignedVendorName: updatedLead.assignedTo?.name || 'Unassigned' };
+        const leadWithDetails = { 
+            ...updatedLead, 
+            pipelineStage: denormalizeStage(updatedLead.pipelineStage),
+            assignedVendorName: updatedLead.assignedTo?.name || 'Unassigned' 
+        };
         res.json(leadWithDetails);
         sendEventsToAll({ type: 'LEAD_UPDATE', data: leadWithDetails });
     } catch (e) { res.status(500).json({ message: 'Error updating lead' }); }
@@ -204,6 +234,27 @@ const uploadLeadDocument = async (req, res) => {
         res.json(updatedLead);
     } catch (e) { res.status(500).json({ message: 'Error uploading document' }); }
 };
+const deleteLead = async (req, res) => {
+    try {
+        const leadId = req.params.id;
+        const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+
+        if (!lead) {
+            return res.status(404).json({ message: 'Lead not found.' });
+        }
+
+        await prisma.lead.delete({
+            where: { id: leadId },
+        });
+
+        res.status(200).json({ message: 'Lead deleted successfully.' });
+        sendEventsToAll({ type: 'LEAD_DELETE', data: { id: leadId } });
+
+    } catch (error) {
+        console.error('Delete lead error:', error);
+        res.status(500).json({ message: 'Error deleting lead.' });
+    }
+};
 const exportLeads = async (req, res) => {
     // Omitting logic for brevity, but it would be similar to getLeads
     res.json([]);
@@ -226,7 +277,7 @@ const performBulkLeadAction = async (req, res) => {
         }
 
         if (action === 'changeStage') {
-            dataToUpdate.pipelineStage = value;
+            dataToUpdate.pipelineStage = normalizeStage(value);
             activityAction = `Stage changed to ${value} via bulk update`;
         } else if (action === 'assignVendor') {
             const vendorId = value === 'unassigned' ? null : value;
@@ -327,7 +378,7 @@ const importLeads = async (req, res) => {
                     email: rowData.email,
                     phone: rowData.phone || '',
                     productType: rowData.productType,
-                    pipelineStage: rowData.pipelineStage || 'New Lead',
+                    pipelineStage: rowData.pipelineStage ? normalizeStage(rowData.pipelineStage) : 'New_Lead',
                     source: rowData.source || 'CSV Import',
                     customFields,
                 };
@@ -386,6 +437,62 @@ const createVendor = async (req, res) => {
         res.status(201).json(vendorToReturn);
     } catch (e) { res.status(500).json({ message: 'Error creating vendor' }); }
 };
+
+// --- Admins ---
+const getMasterAdmins = async (req, res) => {
+    try {
+        const admins = await prisma.user.findMany({ 
+            where: { role: 'Master' }, 
+            select: { id: true, name: true, email: true, role: true } 
+        });
+        res.json(admins);
+    } catch (e) { 
+        console.error("Error fetching master admins:", e);
+        res.status(500).json({ message: 'Error fetching master admins' }); 
+    }
+};
+const createMasterAdmin = async (req, res) => {
+    try {
+        const { name, email, password, confirmationPassword } = req.body;
+        const requestingAdminId = req.user.id;
+        
+        // 1. Verify current admin's password
+        const requestingAdmin = await prisma.user.findUnique({ where: { id: requestingAdminId } });
+        if (!requestingAdmin) {
+            return res.status(401).json({ message: 'Unable to verify your identity. Please log in again.' });
+        }
+        const isPasswordValid = await bcrypt.compare(confirmationPassword, requestingAdmin.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Your password confirmation is incorrect.' });
+        }
+
+        // 2. Check if new admin's email already exists
+        const existing = await prisma.user.findUnique({ where: { email } });
+        if (existing) {
+            return res.status(400).json({ message: 'Email already in use.' });
+        }
+
+        // 3. Create the new Master Admin
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newAdmin = await prisma.user.create({
+            data: { 
+                name, 
+                email, 
+                password: hashedPassword, 
+                role: 'Master', 
+                country: 'India' 
+            }
+        });
+
+        const { password: _, ...adminToReturn } = newAdmin;
+        res.status(201).json(adminToReturn);
+
+    } catch (e) { 
+        console.error("Error creating master admin:", e);
+        res.status(500).json({ message: 'Error creating master admin.' }); 
+    }
+};
+
 
 // --- Settings & Forms ---
 const getSettings = async (req, res) => {
@@ -460,5 +567,8 @@ module.exports = {
     getSettings, saveSettings, updateFormSchema, generateLeadSummary,
     performBulkLeadAction,
     updateProfile,
-    importLeads
+    importLeads,
+    deleteLead,
+    getMasterAdmins,
+    createMasterAdmin
 };

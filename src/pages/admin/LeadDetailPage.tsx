@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Lead, LeadActivity, LeadDocument, PipelineStage, FormField, User } from '../../types';
 import * as adminService from '../../service/adminService';
 import { PIPELINE_STAGES } from '../../constants';
@@ -7,6 +7,9 @@ import PipelineTracker from '../../components/admin/PipelineTracker';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/admin/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { useCrmUpdates } from '../../contexts/CrmUpdatesContext';
+import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal';
+
 
 const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
@@ -28,6 +31,8 @@ const DetailItem: React.FC<{ label: string, value: any, isImage?: boolean }> = (
 const LeadDetailPage: React.FC = () => {
     const { leadId } = useParams<{ leadId: string }>();
     const { user } = useAuth();
+    const navigate = useNavigate();
+    const { triggerUpdate } = useCrmUpdates();
     const [lead, setLead] = useState<Lead | null>(null);
     const [formSchema, setFormSchema] = useState<Map<string, string>>(new Map());
     const [vendors, setVendors] = useState<User[]>([]);
@@ -40,6 +45,8 @@ const LeadDetailPage: React.FC = () => {
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [summary, setSummary] = useState<string | null>(null);
     const [summaryError, setSummaryError] = useState<string | null>(null);
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,6 +145,19 @@ const LeadDetailPage: React.FC = () => {
         }
     };
 
+    const handleDeleteConfirm = async () => {
+        if (!leadId) return;
+        try {
+            await adminService.deleteLead(leadId);
+            setIsDeleteModalOpen(false);
+            triggerUpdate();
+            navigate('/admin/leads');
+        } catch (error) {
+            // Re-throw to be caught by the modal's error handling
+            throw error;
+        }
+    };
+
 
     if (loading) return (
         <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -167,11 +187,20 @@ const LeadDetailPage: React.FC = () => {
                                     </p>
                                 )}
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex-shrink-0">
                                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${lead.scoreStatus === 'Hot' ? 'bg-error-red/20 text-error-red' : lead.scoreStatus === 'Warm' ? 'bg-warning-yellow/20 text-warning-yellow' : 'bg-accent-blue/20 text-accent-blue'}`}>
                                     {lead.scoreStatus} ({lead.score})
                                 </span>
                                 <p className="text-xs text-gray-500 dark:text-text-muted mt-1">Created: {new Date(lead.createdAt).toLocaleDateString()}</p>
+                                {user?.role === 'Master' && (
+                                    <button
+                                        onClick={() => setIsDeleteModalOpen(true)}
+                                        className="mt-4 text-xs text-error-red hover:underline flex items-center gap-1 justify-end ml-auto"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
+                                        Delete Lead
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </Card>
@@ -285,6 +314,14 @@ const LeadDetailPage: React.FC = () => {
                     </Card>
                 </div>
             </div>
+
+            {isDeleteModalOpen && (
+                <DeleteConfirmationModal
+                    itemName={lead.name || 'this lead'}
+                    onClose={() => setIsDeleteModalOpen(false)}
+                    onConfirm={handleDeleteConfirm}
+                />
+            )}
         </div>
     );
 };

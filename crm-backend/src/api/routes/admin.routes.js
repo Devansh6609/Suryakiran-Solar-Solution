@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -41,6 +42,7 @@ router.get('/leads/export', adminController.exportLeads);
 router.post('/leads/import', masterOnlyMiddleware, upload.single('leadsCsv'), adminController.importLeads);
 router.get('/leads/:id', adminController.getLeadDetails);
 router.patch('/leads/:id', adminController.updateLead);
+router.delete('/leads/:id', masterOnlyMiddleware, adminController.deleteLead);
 router.post('/leads/:id/notes', adminController.addLeadNote);
 router.post('/leads/:id/documents', upload.single('document'), adminController.uploadLeadDocument);
 // FIX: Add route for bulk lead actions.
@@ -49,6 +51,10 @@ router.post('/leads/bulk-action', adminController.performBulkLeadAction);
 // --- Vendor Management (Master Only) ---
 router.get('/vendors', masterOnlyMiddleware, adminController.getVendors);
 router.post('/vendors', masterOnlyMiddleware, adminController.createVendor);
+
+// --- Admin Management (Master Only) ---
+router.get('/admins', masterOnlyMiddleware, adminController.getMasterAdmins);
+router.post('/admins', masterOnlyMiddleware, adminController.createMasterAdmin);
 
 // --- User Profile ---
 router.patch('/profile', upload.single('profileImage'), adminController.updateProfile);

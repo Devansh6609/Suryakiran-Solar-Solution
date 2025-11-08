@@ -1,8 +1,8 @@
 import React, { useState, FormEvent, useEffect, Fragment } from 'react';
-import { CalculatorType, FormField, FormFieldType } from '../types.ts';
-import * as crmService from '../service/crmService.ts';
-import * as adminService from '../service/adminService.ts';
-import LoadingSpinner from './LoadingSpinner.tsx';
+import { CalculatorType, FormField, FormFieldType } from '../types';
+import * as crmService from '../service/crmService';
+import * as adminService from '../service/adminService';
+import LoadingSpinner from './LoadingSpinner';
 
 interface CalculatorFormProps {
     type: CalculatorType;
@@ -395,7 +395,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue }) =
             {step === 3 && (
                 <form onSubmit={handleOtpSubmit} className="space-y-4 animate-fade-in">
                     <h3 className="text-xl font-bold text-center text-white">Step 3: Verify Your Number</h3>
-                    <p className="text-center text-text-secondary">Enter the 4-digit OTP sent to {formData.phone}. (Hint: 1234)</p>
+                    <p className="text-center text-text-secondary">Enter the 4-digit OTP sent to {formData.phone}.</p>
                     <InputField label="OTP Code" name="otp" type="text" value={otp} onChange={(e) => { setOtp(e.target.value); setErrors(prev => ({ ...prev, otp: '' })) }} placeholder="XXXX" error={errors.otp} />
                     <button type="submit" disabled={isSubmitting} className="w-full font-bold bg-accent-orange text-white py-3 px-4 rounded-lg shadow-lg hover:bg-accent-orange-hover transition-colors duration-300 flex justify-center items-center disabled:bg-gray-500">
                         {isSubmitting ? <LoadingSpinner size="sm" className="mr-2 !text-white" /> : 'Verify & See My Estimate'}

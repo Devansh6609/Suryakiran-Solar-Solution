@@ -1,10 +1,10 @@
 /// <reference types="react" />
 import React from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
-import { SUCCESS_STORIES } from '../constants.tsx';
-import { StorySegment } from '../types.ts';
-import AnimatedSection from '../components/AnimatedSection.tsx';
-import AnimatedCounter from '../components/AnimatedCounter.tsx';
+import { SUCCESS_STORIES } from '../constants';
+import { StorySegment } from '../types';
+import AnimatedSection from '../components/AnimatedSection';
+import AnimatedCounter from '../components/AnimatedCounter';
 
 const SuccessStoryDetailPage: React.FC = () => {
     const { storyId } = useParams<{ storyId: string }>();

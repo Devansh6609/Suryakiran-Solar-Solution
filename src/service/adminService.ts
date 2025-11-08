@@ -97,6 +97,14 @@ export const updateLead = async (
   return handleResponse(response);
 };
 
+export const deleteLead = async (leadId: string) => {
+  const response = await fetch(`${API_BASE_URL}/api/admin/leads/${leadId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+};
+
 export const addLeadNote = async (leadId: string, note: string) => {
   const response = await fetch(
     `${API_BASE_URL}/api/admin/leads/${leadId}/notes`,

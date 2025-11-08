@@ -1,5 +1,5 @@
 import React from 'react';
-import { Testimonial, SuccessStory, StorySegment, PipelineStage } from './types.ts';
+import { Testimonial, SuccessStory, StorySegment, PipelineStage } from './types';
 import logoUrl from './assets/suryakiran.png';
 import sharmaResidenceImage from './assets/success-story-sharma-residence.png';
 import patelFarmsImage from './assets/success-story-patel-farms.png';
@@ -152,6 +152,12 @@ export const ADMIN_NAV_LINKS = [
         name: 'Vendor Management',
         path: '/admin/vendors',
         icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>,
+        roles: ['Master'],
+    },
+    {
+        name: 'Admin Management',
+        path: '/admin/admins',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 8a6 6 0 11-12 0 6 6 0 0112 0zM5.468 15.118A8.969 8.969 0 0112 13a8.969 8.969 0 016.532 2.118A9 9 0 105.468 15.118z" clipRule="evenodd" /></svg>,
         roles: ['Master'],
     },
     {

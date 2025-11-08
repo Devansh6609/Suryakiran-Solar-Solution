@@ -36,6 +36,8 @@ import FormBuilderPage from './pages/admin/FormBuilderPage.tsx';
 import SettingsPage from './pages/admin/SettingsPage.tsx';
 import UserProfilePage from './pages/admin/UserProfilePage.tsx';
 import VendorManagementPage from './pages/admin/VendorManagementPage.tsx';
+import AdminManagementPage from './pages/admin/AdminManagementPage.tsx';
+
 
 const AppRoutes: React.FC = () => {
     const { isLoading } = useAuth();
@@ -89,6 +91,14 @@ const AppRoutes: React.FC = () => {
                     element={
                         <MasterRoute>
                             <VendorManagementPage />
+                        </MasterRoute>
+                    }
+                />
+                <Route
+                    path="admins"
+                    element={
+                        <MasterRoute>
+                            <AdminManagementPage />
                         </MasterRoute>
                     }
                 />

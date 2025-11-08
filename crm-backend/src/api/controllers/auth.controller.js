@@ -1,5 +1,6 @@
 const prisma = require('../../config/prisma');
 const bcrypt = require('bcrypt');
+const sgMail = require('@sendgrid/mail');
 
 const login = async (req, res) => {
     const { email, password } = req.body;
@@ -34,9 +35,33 @@ const requestPasswordReset = async (req, res) => {
                 data: { resetToken },
             });
             
-            // In a real app, you would use an email service. We log it for demonstration.
-            const resetLink = `http://<your-frontend-url>/#/reset-password/${resetToken}`;
-            console.log(`Password reset link for ${email}: ${resetLink}`);
+            const resetLink = `http://localhost:5173/#/reset-password/${resetToken}`;
+
+            // If SendGrid API key is configured, send a real email.
+            if (process.env.SENDGRID_API_KEY) {
+                sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+                const msg = {
+                    to: email,
+                    // IMPORTANT: This 'from' email MUST be a verified sender in your SendGrid account.
+                    from: 'devanshagile@gmail.com', 
+                    subject: 'SuryaKiran CRM: Password Reset Request',
+                    html: `
+                        <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                            <h2>Password Reset</h2>
+                            <p>You are receiving this email because a password reset request was initiated for your account.</p>
+                            <p>Please click the button below to reset your password. This link is valid for one hour.</p>
+                            <a href="${resetLink}" style="background-color: #F97316; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Your Password</a>
+                            <p style="margin-top: 20px;">If you did not request a password reset, please ignore this email.</p>
+                            <p>- The SuryaKiran Team</p>
+                        </div>
+                    `,
+                };
+                await sgMail.send(msg);
+            } else {
+                // Fallback for local development if no API key is present.
+                console.warn('SENDGRID_API_KEY not found. Logging password reset link to console instead of sending email.');
+                console.log(`Password reset link for ${email}: ${resetLink}`);
+            }
         }
 
         // Always return a success message to prevent email enumeration attacks.
@@ -44,6 +69,9 @@ const requestPasswordReset = async (req, res) => {
 
     } catch (error) {
         console.error("Forgot password error:", error);
+        if (error.response) {
+            console.error(error.response.body)
+        }
         res.status(500).json({ message: 'An internal server error occurred.' });
     }
 };
