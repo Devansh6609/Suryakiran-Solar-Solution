@@ -1,9 +1,9 @@
 import React from 'react';
 // FIX: Changed to named import to resolve module export errors.
 import { Link } from 'react-router-dom';
-import pumpVideo from '../assets/solar-pump-agriculture.mp4';
-import AnimatedSection from '../components/AnimatedSection';
+import AnimatedSection from '../components/AnimatedSection.tsx';
 import pumpInFieldImage from '../assets/solar-pump-in-field.png';
+import pumpVideo from '../assets/solar-pump-agriculture.mp4';
 
 const SolarPumpsPage: React.FC = () => {
     return (

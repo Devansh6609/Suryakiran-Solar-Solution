@@ -1,12 +1,11 @@
-
 import React from 'react';
-// FIX: Changed to namespace import to resolve module export errors.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Changed to named import to resolve module export errors.
+import { Link } from 'react-router-dom';
 // NOTE: Please ensure you have this image file at 'src/assets/solar-panels-on-hill.jpeg'
 import heroPoster from '../assets/solar-panels-on-hill.jpeg';
-import Marquee from './Marquee';
-import { HERO_MARQUEE_TEXT, HERO_HEADLINES } from '../constants';
-import { useTypewriter } from '../hooks/useTypewriter';
+import Marquee from './Marquee.tsx';
+import { HERO_MARQUEE_TEXT, HERO_HEADLINES } from '../constants.tsx';
+import { useTypewriter } from '../hooks/useTypewriter.ts';
 import heroVideo from '../assets/hero-background-video.mp4';
 
 const HeroSection: React.FC = () => {
@@ -27,7 +26,7 @@ const HeroSection: React.FC = () => {
                 className="absolute top-1/2 left-1/2 w-auto min-w-full min-h-full max-w-none -translate-x-1/2 -translate-y-1/2 z-0"
                 poster={heroPoster}
             >
-                {/* Use the locally imported video */}
+                {/* Use a direct path to the video file */}
                 <source src={heroVideo} type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
@@ -44,12 +43,12 @@ const HeroSection: React.FC = () => {
                         Maximize PM Surya Ghar & PM-KUSUM Benefits. Start Saving Today.
                     </p>
                     <div className="mt-10 flex flex-col sm:flex-row items-start justify-start gap-4">
-                        <ReactRouterDOM.Link to="/calculator/rooftop" className="w-full sm:w-auto text-lg text-center font-bold bg-accent-orange text-white py-4 px-8 rounded-lg shadow-lg hover:bg-accent-orange-hover transform hover:-translate-y-1 transition-all duration-300">
+                        <Link to="/calculator/rooftop" className="w-full sm:w-auto text-lg text-center font-bold bg-accent-orange text-white py-4 px-8 rounded-lg shadow-lg hover:bg-accent-orange-hover transform hover:-translate-y-1 transition-all duration-300">
                             Calculate Rooftop Savings
-                        </ReactRouterDOM.Link>
-                        <ReactRouterDOM.Link to="/calculator/pump" className="w-full sm:w-auto text-lg text-center font-bold bg-accent-yellow text-white py-4 px-8 rounded-lg shadow-lg hover:bg-accent-yellow-hover transform hover:-translate-y-1 transition-all duration-300">
+                        </Link>
+                        <Link to="/calculator/pump" className="w-full sm:w-auto text-lg text-center font-bold bg-accent-yellow text-white py-4 px-8 rounded-lg shadow-lg hover:bg-accent-yellow-hover transform hover:-translate-y-1 transition-all duration-300">
                             Estimate Pump Subsidy
-                        </ReactRouterDOM.Link>
+                        </Link>
                     </div>
                 </div>
             </div>

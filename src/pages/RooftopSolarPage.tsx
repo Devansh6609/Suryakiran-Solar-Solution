@@ -1,9 +1,9 @@
 import React from 'react';
 // FIX: Changed to named import to resolve module export errors.
 import { Link } from 'react-router-dom';
-import rooftopVideo from '../assets/rooftop-solar-installation.mp4';
-import AnimatedSection from '../components/AnimatedSection';
+import AnimatedSection from '../components/AnimatedSection.tsx';
 import mehraResidenceImage from '../assets/case-study-mehra-residence.png';
+import rooftopVideo from '../assets/rooftop-solar-installation.mp4';
 
 const RooftopSolarPage: React.FC = () => {
     return (
@@ -49,13 +49,13 @@ const RooftopSolarPage: React.FC = () => {
                         <div className="rounded-lg shadow-xl overflow-hidden">
                             <video
                                 className="w-full h-full object-cover"
-                                src={rooftopVideo}
                                 autoPlay
                                 loop
                                 muted
                                 playsInline
                                 poster="https://picsum.photos/seed/solar-roof/600/400"
                             >
+                                <source src={rooftopVideo} type="video/mp4" />
                                 Your browser does not support the video tag.
                             </video>
                         </div>
