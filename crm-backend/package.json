@@ -4,7 +4,7 @@
   "description": "A simple CRM backend for SuryaKiran Solar Solutions",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "npx prisma migrate deploy && npx prisma db seed && node server.js",
     "db:seed": "prisma db seed"
   },
   "prisma": {
