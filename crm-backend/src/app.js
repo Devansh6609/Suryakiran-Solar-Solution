@@ -43,7 +43,7 @@ app.use('*', prismaMiddleware);
 app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // --- Routes ---
-app.get('/files/:id', documentController.getFile);
+app.get('/files/*', documentController.getFile);
 
 app.route('/api/auth', authRoutes);
 app.route('/api', publicRoutes);

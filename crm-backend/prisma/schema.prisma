@@ -128,3 +128,14 @@ model Notification {
 // NtpStatus: Received, Not_Received
 // AifStatus: Done, Pending
 // WorkStatus: Pending, Material_Dispatched, Work_Complete
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  description String
+  make        String
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

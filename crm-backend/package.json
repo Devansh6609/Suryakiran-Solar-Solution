@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20260403.1",
+    "@hono/node-server": "^2.0.3",
     "@prisma/adapter-d1": "^5.22.0",
     "@prisma/client": "^5.15.0",
     "@sendgrid/mail": "^8.1.3",

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import * as adminController from '../controllers/admin.controller.js';
+import * as productController from '../controllers/product.controller.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
 import masterOnlyMiddleware from '../middlewares/masterOnly.middleware.js';
 
@@ -50,6 +51,12 @@ admin.post('/settings', adminController.updateSettings);
 
 // Form Builder
 admin.put('/forms/:formType', adminController.updateFormSchema);
+
+// Products Catalog
+admin.get('/products', productController.getProducts);
+admin.post('/products', productController.createProduct);
+admin.patch('/products/:id', productController.updateProduct);
+admin.delete('/products/:id', productController.deleteProduct);
 
 // Events (SSE stub — Cloudflare Workers don't support long-polling well)
 admin.get('/events', adminController.getEvents);

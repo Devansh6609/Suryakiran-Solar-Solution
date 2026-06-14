@@ -356,6 +356,42 @@ async function updateSettings(apiKey: string) {
   return handleResponse(response);
 }
 
+// Products Catalog
+async function getProducts() {
+  const response = await fetch(`${API_BASE_URL}/api/admin/products`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+}
+
+async function createProduct(formData: FormData) {
+  const token = localStorage.getItem("authToken");
+  const response = await fetch(`${API_BASE_URL}/api/admin/products`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  return handleResponse(response);
+}
+
+async function updateProduct(id: string, formData: FormData) {
+  const token = localStorage.getItem("authToken");
+  const response = await fetch(`${API_BASE_URL}/api/admin/products/${id}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  return handleResponse(response);
+}
+
+async function deleteProduct(id: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/products/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+}
+
 export {
   getDashboardStats,
   getChartData,
@@ -384,4 +420,9 @@ export {
   getAllLeadsData,
   getSettings,
   updateSettings,
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
 };
+
