@@ -1,20 +1,11 @@
 import { calculateScore, getScoreStatus } from '../utils/leadScoring.js';
+import indiaLocationsData from '../../data/india_locations.json' with { type: 'json' };
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-// Read the complete Indian states and districts JSON
-const locationsFilePath = path.join(__dirname, '../../data/india_locations.json');
-let indiaLocations = { states: [] };
-try {
-    indiaLocations = JSON.parse(fs.readFileSync(locationsFilePath, 'utf-8'));
-} catch (e) {
-    console.error("Failed to load india_locations.json", e);
-}
+// Use the imported JSON directly (Wrangler will bundle this, and Node can run it with experimental-json-modules if needed, 
+// but since this is primarily for Workers, direct import is best).
+let indiaLocations = indiaLocationsData || { states: [] };
 
 export const getStates = async (c) => {
     try {
