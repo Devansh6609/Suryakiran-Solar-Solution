@@ -150,7 +150,10 @@ import {
     UserCog,
     LayoutTemplate,
     PenLine,
-    Settings
+    Settings,
+    FileText,
+    ClipboardCheck,
+    Package
 } from 'lucide-react';
 
 export const ADMIN_NAV_LINKS = [
@@ -164,6 +167,24 @@ export const ADMIN_NAV_LINKS = [
         name: 'Leads Pipeline',
         path: '/admin/leads',
         icon: <GitBranch className="h-5 w-5 md:h-6 md:w-6" />,
+        roles: ['Master', 'Vendor'],
+    },
+    {
+        name: 'Survey Management',
+        path: '/admin/surveys',
+        icon: <ClipboardCheck className="h-5 w-5 md:h-6 md:w-6" />,
+        roles: ['Master', 'Vendor'],
+    },
+    {
+        name: 'Quotations Hub',
+        path: '/admin/quotations',
+        icon: <FileText className="h-5 w-5 md:h-6 md:w-6" />,
+        roles: ['Master', 'Vendor'],
+    },
+    {
+        name: 'Inventory Management',
+        path: '/admin/inventory',
+        icon: <Package className="h-5 w-5 md:h-6 md:w-6" />,
         roles: ['Master', 'Vendor'],
     },
     {
@@ -206,11 +227,35 @@ export const ADMIN_NAV_LINKS = [
 
 export const PIPELINE_STAGES: PipelineStage[] = [
     PipelineStage.NewLead,
-    PipelineStage.VerifiedLead,
-    PipelineStage.Qualified,
-    PipelineStage.SiteSurveyScheduled,
-    PipelineStage.ProposalSent,
-    PipelineStage.Negotiation,
-    PipelineStage.ClosedWon,
-    PipelineStage.ClosedLost,
+    PipelineStage.Survey,
+    PipelineStage.QuotationSent,
+    PipelineStage.CustomerApproved,
+    PipelineStage.MaterialDispatched,
+    PipelineStage.Installation,
+    PipelineStage.Completed,
+    PipelineStage.Lost,
 ];
+
+// Human-readable labels for pipeline stages
+export const PIPELINE_STAGE_LABELS: Record<string, string> = {
+    'New_Lead':           '🆕 New Lead',
+    'Survey':             '📋 Survey',
+    'Quotation_Sent':     '💰 Quotation Sent',
+    'Customer_Approved':  '✅ Customer Approved',
+    'Material_Dispatched':'🚚 Material Dispatched',
+    'Installation':       '🔨 Installation',
+    'Completed':          '🏆 Completed',
+    'Lost':               '❌ Lost',
+};
+
+// Stage colors for UI
+export const PIPELINE_STAGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+    'New_Lead':            { bg: 'bg-slate-500/10', text: 'text-slate-300', border: 'border-slate-500/30' },
+    'Survey':              { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
+    'Quotation_Sent':      { bg: 'bg-blue-500/10',  text: 'text-blue-400',  border: 'border-blue-500/30' },
+    'Customer_Approved':   { bg: 'bg-violet-500/10',text: 'text-violet-400',border: 'border-violet-500/30' },
+    'Material_Dispatched': { bg: 'bg-orange-500/10',text: 'text-orange-400',border: 'border-orange-500/30' },
+    'Installation':        { bg: 'bg-cyan-500/10',  text: 'text-cyan-400',  border: 'border-cyan-500/30' },
+    'Completed':           { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
+    'Lost':                { bg: 'bg-red-500/10',   text: 'text-red-400',   border: 'border-red-500/30' },
+};

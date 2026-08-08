@@ -1,59 +1,36 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllLeadsData } from '../../service/adminService';
-import { Lead, CalculatorType, PipelineStage } from '../../types';
+import { Lead, CalculatorType } from '../../types';
 import Pagination from '../../components/admin/Pagination';
 import { PIPELINE_STAGES } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 import ImportLeadsModal from '../../components/admin/ImportLeadsModal';
 import { useCrmUpdates } from '../../contexts/CrmUpdatesContext';
 import { Database, Search, Download, Upload, ChevronUp, ChevronDown } from 'lucide-react';
-import LoadingSpinner from '../../components/LoadingSpinner';
-
-
-const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
+import { TableSkeleton } from '../../components/skeletons';
 
 const getStatusColor = (status: string) => {
     switch (status) {
-        case 'Hot': return 'bg-error-red/20 text-error-red';
-        case 'Warm': return 'bg-warning-yellow/20 text-warning-yellow';
-        case 'Cold': return 'bg-accent-blue/20 text-accent-blue';
-        default: return 'bg-gray-500/20 text-text-muted';
+        case 'Hot': return { bg: 'rgb(var(--color-danger)/0.1)', color: 'rgb(var(--color-danger))' };
+        case 'Warm': return { bg: 'rgb(var(--color-warning)/0.1)', color: 'rgb(var(--color-warning))' };
+        case 'Cold': return { bg: 'rgb(var(--color-info)/0.1)', color: 'rgb(var(--color-info))' };
+        default: return { bg: 'rgb(var(--surface-2))', color: 'rgb(var(--text-2))' };
     }
 };
 
 const getStageColor = (stage: string) => {
-    if (stage.includes('Won')) return 'bg-success-green/20 text-success-green';
-    if (stage.includes('Lost')) return 'bg-error-red/20 text-error-red';
-    if (stage.includes('Proposal') || stage.includes('Negotiation')) return 'bg-secondary-cyan/20 text-secondary-cyan';
-    return 'bg-gray-500/20 text-text-muted';
+    if (stage.includes('Won') || stage.includes('Completed')) return { bg: 'rgb(var(--color-success)/0.1)', color: 'rgb(var(--color-success))' };
+    if (stage.includes('Lost')) return { bg: 'rgb(var(--color-danger)/0.1)', color: 'rgb(var(--color-danger))' };
+    if (stage.includes('Quotation')) return { bg: 'rgb(var(--color-info)/0.1)', color: 'rgb(var(--color-info))' };
+    return { bg: 'rgb(var(--surface-2))', color: 'rgb(var(--text-2))' };
 };
 
 const SortIcon: React.FC<{ direction?: 'ascending' | 'descending' }> = ({ direction }) => {
-    if (!direction) return <span className="opacity-0 group-hover:opacity-50 transition-opacity ml-1">↕</span>;
-    return direction === 'ascending' ? <ChevronUp size={14} className="ml-1 inline-block text-neon-cyan" /> : <ChevronDown size={14} className="ml-1 inline-block text-neon-cyan" />;
+    if (!direction) return <span className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-[10px]">↕</span>;
+    return direction === 'ascending' ? <ChevronUp size={12} className="ml-1 inline-block" /> : <ChevronDown size={12} className="ml-1 inline-block" />;
 };
 
-const SkeletonLoader: React.FC = () => (
-    <div className="animate-pulse space-y-6">
-        <div className="h-10 bg-glass-surface/40 border border-glass-border/30 rounded-xl w-1/4 mb-6"></div>
-        <div className="bg-glass-surface/40 border border-glass-border/30 rounded-3xl p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="h-12 bg-white/5 rounded-xl border border-white/5" />
-                <div className="h-12 bg-white/5 rounded-xl border border-white/5" />
-                <div className="h-12 bg-white/5 rounded-xl border border-white/5" />
-                <div className="h-12 bg-white/5 rounded-xl border border-white/5" />
-            </div>
-        </div>
-        <div className="bg-glass-surface/40 border border-glass-border/30 rounded-3xl p-6">
-            <div className="space-y-4">
-                {[...Array(10)].map((_, i) => (
-                    <div key={i} className="h-16 bg-white/5 rounded-xl border border-white/5"></div>
-                ))}
-            </div>
-        </div>
-    </div>
-);
 
 
 const DataExplorerPage: React.FC = () => {
@@ -84,9 +61,9 @@ const DataExplorerPage: React.FC = () => {
 
         if (searchTerm) {
             filtered = filtered.filter(lead =>
-                lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                lead.phone.includes(searchTerm)
+                lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                lead.phone?.includes(searchTerm)
             );
         }
 
@@ -141,27 +118,19 @@ const DataExplorerPage: React.FC = () => {
 
     const handleImportComplete = () => {
         setIsImportModalOpen(false);
-        triggerUpdate(); // Refresh the data
+        triggerUpdate();
     }
 
     const handleExport = () => {
         const headers = ['Name', 'Email', 'Phone', 'Product', 'Vendor', 'Stage', 'Amount'];
-
         const rows = filteredAndSortedLeads.map(lead => {
             const amount = lead.customFields?.bill || lead.customFields?.energyCost || '-';
             const vendor = lead.assignedVendorName || 'Unassigned';
-
             return [
-                `"${lead.name}"`,
-                `"${lead.email}"`,
-                `"${lead.phone}"`,
-                `"${lead.productType}"`,
-                `"${vendor}"`,
-                `"${lead.pipelineStage}"`,
-                `"${amount}"`
+                `"${lead.name}"`, `"${lead.email}"`, `"${lead.phone}"`,
+                `"${lead.productType}"`, `"${vendor}"`, `"${lead.pipelineStage}"`, `"${amount}"`
             ].join(',');
         });
-
         const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -172,76 +141,57 @@ const DataExplorerPage: React.FC = () => {
         document.body.removeChild(link);
     };
 
-    if (loading) return <SkeletonLoader />;
-    if (error) return <div className="text-center p-8 text-error-red">{error}</div>;
+    if (loading) return <div className="p-4 md:p-6 max-w-7xl mx-auto"><TableSkeleton /></div>;
+    if (error) return <div className="text-center p-8 font-600" style={{ color: 'rgb(var(--color-danger))' }}>{error}</div>;
 
-    const inputClasses = "w-full pl-10 pr-4 py-3 bg-night-sky/50 border border-glass-border/30 rounded-xl text-sm text-text-primary focus:ring-2 focus:ring-neon-cyan/50 focus:border-neon-cyan outline-none transition-all placeholder:text-text-secondary/40 appearance-none";
-    const selectClasses = "w-full px-4 py-3 bg-night-sky/50 border border-glass-border/30 rounded-xl text-sm text-text-primary focus:ring-2 focus:ring-neon-cyan/50 focus:border-neon-cyan outline-none transition-all appearance-none cursor-pointer";
-    const btnBase = "flex items-center justify-center gap-2 font-black py-3 px-6 rounded-xl transition-all shadow-glow-sm hover:scale-[1.02] active:scale-[0.98] text-sm tracking-wide";
-    const btnExport = `${btnBase} bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20`;
-    const btnImport = `${btnBase} bg-gradient-to-r from-neon-cyan to-electric-blue text-night-sky shadow-neon-cyan/30`;
+    const inputClasses = "w-full pl-9 pr-4 py-2 bg-[rgb(var(--surface-1))] border border-[rgb(var(--border-default))] rounded-lg text-sm text-[rgb(var(--text-0))] focus:border-[rgb(var(--accent))] outline-none";
+    const selectClasses = "w-full pl-3 pr-8 py-2 bg-[rgb(var(--surface-1))] border border-[rgb(var(--border-default))] rounded-lg text-sm text-[rgb(var(--text-0))] focus:border-[rgb(var(--accent))] outline-none appearance-none cursor-pointer";
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 animate-fade-in pb-24">
+        <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 anim-fade-up">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <div className="px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/20 text-neon-cyan text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Database size={12} className="text-neon-cyan" />
-                            Data Center
-                        </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <div className="flex items-center gap-2 text-xs font-600 mb-0.5" style={{ color: 'rgb(var(--color-info))' }}>
+                        <Database size={14} /> Data Center
                     </div>
-                    <h1 className="text-4xl lg:text-5xl font-black text-text-primary tracking-tight">
-                        Data <span className="text-neon-cyan">Explorer</span>
-                    </h1>
-                    <p className="text-text-secondary/60 text-sm font-bold">
-                        Browse, filter, and export system-wide lead data.
-                    </p>
+                    <h1 className="text-2xl font-700" style={{ color: 'rgb(var(--text-0))' }}>Data Explorer</h1>
                 </div>
             </div>
 
             {/* Filter Controls */}
-            <div className="bg-glass-surface/40 backdrop-blur-3xl rounded-3xl border border-glass-border/30 p-4 sm:p-6 shadow-glow-sm shadow-neon-cyan/5">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:flex items-center gap-4">
-                    <div className="relative flex-grow min-w-[250px]">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/50" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search leads by name, email, or phone..."
-                            value={searchTerm}
-                            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                            className={inputClasses}
-                        />
+            <div className="crm-card p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div className="relative lg:col-span-2">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={14} style={{ color: 'rgb(var(--text-3))' }} />
+                        <input type="text" placeholder="Search name, email, phone..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} className={inputClasses} />
                     </div>
 
-                    <div className="relative min-w-[150px]">
+                    <div className="relative">
                         <select name="productType" value={filters.productType} onChange={handleFilterChange} className={selectClasses}>
                             <option value="all">All Products</option>
                             <option value={CalculatorType.Rooftop}>Rooftop Solar</option>
                             <option value={CalculatorType.Pump}>Solar Pump</option>
                             <option value="Contact Inquiry">Contact Inquiry</option>
                         </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" size={16} />
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" size={14} style={{ color: 'rgb(var(--text-3))' }} />
                     </div>
 
-                    <div className="relative min-w-[150px]">
+                    <div className="relative">
                         <select name="pipelineStage" value={filters.pipelineStage} onChange={handleFilterChange} className={selectClasses}>
                             <option value="all">All Stages</option>
                             {PIPELINE_STAGES.map(stage => <option key={stage} value={stage}>{stage}</option>)}
                         </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" size={16} />
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" size={14} style={{ color: 'rgb(var(--text-3))' }} />
                     </div>
 
-                    <div className="flex gap-4 md:col-span-2 lg:col-span-1">
-                        <button onClick={handleExport} className={`${btnExport} flex-1 lg:flex-none`}>
-                            <Download size={18} />
-                            EXPORT
+                    <div className="flex gap-2">
+                        <button onClick={handleExport} className="crm-btn-secondary flex-1 py-2 justify-center text-xs">
+                            <Download size={14} /> EXPORT
                         </button>
                         {user?.role === 'Master' && (
-                            <button onClick={() => setIsImportModalOpen(true)} className={`${btnImport} flex-1 lg:flex-none`}>
-                                <Upload size={18} />
-                                IMPORT
+                            <button onClick={() => setIsImportModalOpen(true)} className="crm-btn-primary flex-1 py-2 justify-center text-xs">
+                                <Upload size={14} /> IMPORT
                             </button>
                         )}
                     </div>
@@ -249,77 +199,69 @@ const DataExplorerPage: React.FC = () => {
             </div>
 
             {/* Data Table */}
-            <div className="bg-glass-surface/40 backdrop-blur-3xl rounded-3xl border border-glass-border/30 shadow-glow-sm shadow-neon-cyan/5 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+            <div className="crm-card overflow-visible">
+                <div>
+                    <table className="crm-table mobile-card-list">
                         <thead>
-                            <tr className="border-b border-glass-border/20 bg-white/[0.02]">
-                                <th className="px-6 py-4 text-[10px] font-black text-text-secondary/70 uppercase tracking-widest cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('name')}>
+                            <tr>
+                                <th onClick={() => handleSort('name')} className="cursor-pointer group select-none">
                                     <div className="flex items-center">Name <SortIcon direction={sortConfig.key === 'name' ? sortConfig.direction : undefined} /></div>
                                 </th>
-                                <th className="px-6 py-4 text-[10px] font-black text-text-secondary/70 uppercase tracking-widest">Product</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-text-secondary/70 uppercase tracking-widest">Stage</th>
-                                {user?.role === 'Master' && (
-                                    <th className="px-6 py-4 text-[10px] font-black text-text-secondary/70 uppercase tracking-widest">Vendor</th>
-                                )}
-                                <th className="px-6 py-4 text-[10px] font-black text-text-secondary/70 uppercase tracking-widest cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('score')}>
+                                <th>Product</th>
+                                <th>Stage</th>
+                                {user?.role === 'Master' && <th>Vendor</th>}
+                                <th onClick={() => handleSort('score')} className="cursor-pointer group select-none">
                                     <div className="flex items-center">Score <SortIcon direction={sortConfig.key === 'score' ? sortConfig.direction : undefined} /></div>
                                 </th>
-                                <th className="px-6 py-4 text-[10px] font-black text-text-secondary/70 uppercase tracking-widest cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('createdAt')}>
+                                <th onClick={() => handleSort('createdAt')} className="cursor-pointer group select-none">
                                     <div className="flex items-center">Date <SortIcon direction={sortConfig.key === 'createdAt' ? sortConfig.direction : undefined} /></div>
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-glass-border/10">
-                            {paginatedLeads.map(lead => (
-                                <tr key={lead.id} onClick={() => navigate(`/admin/leads/${lead.id}`)} className="hover:bg-white/[0.02] cursor-pointer transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
-                                            <div className="font-bold text-text-primary group-hover:text-neon-cyan transition-colors">{lead.name}</div>
-                                            <div className="text-xs text-text-secondary/60 font-mono mt-0.5">{lead.email}</div>
-                                        </div>
+                        <tbody>
+                            {paginatedLeads.map(lead => {
+                                const stStyle = getStageColor(lead.pipelineStage as string);
+                                const scStyle = getStatusColor(lead.scoreStatus);
+                                return (
+                                <tr key={lead.id} onClick={() => navigate(`/admin/leads/${lead.id}`)}>
+                                    <td data-label="Name">
+                                        <div className="font-600" style={{ color: 'rgb(var(--text-0))' }}>{lead.name}</div>
+                                        <div className="text-xs" style={{ color: 'rgb(var(--text-3))' }}>{lead.email}</div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-text-secondary capitalize font-bold">
+                                    <td data-label="Product" className="text-sm font-600" style={{ color: 'rgb(var(--text-1))' }}>
                                         {lead.productType}
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 inline-flex text-[10px] font-black uppercase tracking-widest rounded-md border ${getStageColor(lead.pipelineStage).replace('text-', 'border-').replace('/20', '/30')}`}>
+                                    <td data-label="Stage">
+                                        <span className="crm-badge" style={{ backgroundColor: stStyle.bg, color: stStyle.color }}>
                                             {lead.pipelineStage}
                                         </span>
                                     </td>
                                     {user?.role === 'Master' && (
-                                        <td className="px-6 py-4 text-sm text-text-secondary">
+                                        <td data-label="Vendor">
                                             {lead.assignedVendorName ? (
-                                                <span className="flex items-center gap-2 font-bold">
-                                                    <span className="w-2 h-2 rounded-full bg-success-green shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
-                                                    {lead.assignedVendorName}
-                                                </span>
+                                                <span className="text-sm font-500" style={{ color: 'rgb(var(--text-1))' }}>{lead.assignedVendorName}</span>
                                             ) : (
-                                                <span className="text-text-secondary/40 italic text-xs">Unassigned</span>
+                                                <span className="text-xs italic" style={{ color: 'rgb(var(--text-3))' }}>Unassigned</span>
                                             )}
                                         </td>
                                     )}
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 inline-flex text-[10px] font-black uppercase tracking-widest rounded-md ${getStatusColor(lead.scoreStatus)}`}>
+                                    <td data-label="Score">
+                                        <span className="crm-badge" style={{ backgroundColor: scStyle.bg, color: scStyle.color }}>
                                             {lead.scoreStatus} ({lead.score})
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-xs text-text-secondary/60 font-mono">
-                                        {new Date(lead.createdAt).toLocaleDateString(undefined, {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric'
-                                        })}
+                                    <td data-label="Date">
+                                        <span className="text-sm" style={{ color: 'rgb(var(--text-2))' }}>
+                                            {new Date(lead.createdAt).toLocaleDateString()}
+                                        </span>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                             {paginatedLeads.length === 0 && (
                                 <tr>
-                                    <td colSpan={user?.role === 'Master' ? 6 : 5} className="px-6 py-12 text-center text-text-secondary">
-                                        <div className="flex flex-col items-center justify-center gap-3">
-                                            <Database size={48} className="text-text-secondary/20" />
-                                            <p className="font-bold">No leads found matching your criteria.</p>
-                                        </div>
+                                    <td colSpan={user?.role === 'Master' ? 6 : 5} className="py-12 text-center">
+                                        <Database size={32} className="mx-auto mb-3 opacity-30" style={{ color: 'rgb(var(--text-3))' }} />
+                                        <p className="text-sm font-500" style={{ color: 'rgb(var(--text-2))' }}>No leads found matching your criteria.</p>
                                     </td>
                                 </tr>
                             )}
@@ -329,7 +271,7 @@ const DataExplorerPage: React.FC = () => {
             </div>
 
             {filteredAndSortedLeads.length > ITEMS_PER_PAGE && (
-                <div className="bg-glass-surface/40 backdrop-blur-3xl rounded-3xl border border-glass-border/30 p-2 shadow-glow-sm shadow-neon-cyan/5 flex justify-center">
+                <div className="flex justify-center mt-4">
                     <Pagination
                         currentPage={currentPage}
                         totalPages={Math.ceil(filteredAndSortedLeads.length / ITEMS_PER_PAGE)}

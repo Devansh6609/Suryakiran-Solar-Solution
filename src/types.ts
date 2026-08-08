@@ -39,14 +39,38 @@ export interface User {
 }
 
 export enum PipelineStage {
-  NewLead = "New Lead",
-  VerifiedLead = "Verified Lead",
-  Qualified = "Qualified (Vetting)",
-  SiteSurveyScheduled = "Site Survey Scheduled",
-  ProposalSent = "Proposal Sent",
-  Negotiation = "Negotiation/Finance",
-  ClosedWon = "Closed Won / Project",
-  ClosedLost = "Closed Lost",
+  NewLead        = "New_Lead",
+  Survey         = "Survey",
+  QuotationSent  = "Quotation_Sent",
+  CustomerApproved = "Customer_Approved",
+  MaterialDispatched = "Material_Dispatched",
+  Installation   = "Installation",
+  Completed      = "Completed",
+  Lost           = "Lost",
+}
+
+
+export interface StageVerificationRecord {
+  id: string;
+  leadId: string;
+  stage: string;
+  status: "Completed" | "Pending_Verification" | "Rejected";
+  verifiedBy?: string;
+  assignedTo?: string;
+  remarks?: string;
+  evidenceData: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MaterialCheckItem {
+  id?: string;
+  componentName: string;
+  requiredQty: string;
+  receivedQty: string;
+  condition: "Good" | "Damaged" | "Missing";
+  photoUrl?: string;
+  notes?: string;
 }
 
 export enum LeadScoreStatus {
@@ -85,9 +109,12 @@ export interface Lead {
 
   documents: LeadDocument[];
   activityLog: LeadActivity[];
+  notes?: LeadActivity[];
 
   assignedVendorId: string | null;
   assignedVendorName?: string;
+  assignedTo?: { name: string; email: string };
+  surveys?: any[];
 
   // Manual Workflow Fields
   source?: string;
@@ -128,6 +155,7 @@ export interface FormField {
   placeholder?: string;
   required: boolean;
   options?: string[];
+  visibleInStates?: string[];
 }
 
 export type FormSchema = FormField[];

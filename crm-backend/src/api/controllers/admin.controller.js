@@ -19,31 +19,137 @@ export const getDashboardStats = async (c) => {
     try {
         const prisma = c.get('prisma');
         const user = c.get('user');
+        const { vendorId, startDate, endDate } = c.req.query();
+
         let where = {};
         if (user.role === 'Vendor') {
-            where = { assignedVendorId: user.id };
+            where.assignedVendorId = user.id;
+        } else if (vendorId && vendorId !== 'all') {
+            where.assignedVendorId = vendorId;
         }
 
-        const totalLeads = await prisma.lead.count({ where });
-        
-        const conversions = await prisma.lead.count({ 
-            where: { ...where, pipelineStage: 'Closed Won / Project' } 
-        });
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate);
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                where.createdAt.lte = end;
+            }
+        }
 
-        const activeLeads = await prisma.lead.count({
-            where: {
-                ...where,
-                pipelineStage: { in: ['New Lead', 'Verified Lead', 'Qualified (Vetting)', 'Site Survey Scheduled', 'Proposal Sent', 'Negotiation/Finance'] }
+        const leads = await prisma.lead.findMany({
+            where,
+            select: {
+                id: true,
+                productType: true,
+                pipelineStage: true,
+                otpVerified: true,
+                customFields: true,
+                createdAt: true,
+                quotations: {
+                    select: { netCost: true, totalAmount: true },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
+                }
             }
         });
 
-        const leadConversion = totalLeads > 0 ? (conversions / totalLeads) : 0;
+        const totalLeads = leads.length;
+
+        const verifiedLeads = leads.filter(l =>
+            l.otpVerified || ['Survey', 'Quotation_Sent', 'Customer_Approved', 'Material_Dispatched', 'Installation', 'Completed'].includes(l.pipelineStage)
+        ).length;
+
+        const projectsWon = leads.filter(l => l.pipelineStage === 'Completed').length;
+
+        // Calculate individual lead estimated value from generated quotation or custom fields
+        const getLeadValue = (l) => {
+            try {
+                if (l.quotations && l.quotations.length > 0) {
+                    const latestQuo = l.quotations[0];
+                    if (latestQuo.netCost) return Number(latestQuo.netCost);
+                    if (latestQuo.totalAmount) return Number(latestQuo.totalAmount);
+                }
+                let cf = {};
+                if (typeof l.customFields === 'string') {
+                    cf = JSON.parse(l.customFields || '{}');
+                } else if (typeof l.customFields === 'object' && l.customFields !== null) {
+                    cf = l.customFields;
+                }
+                if (cf.quoteAmount) return Number(cf.quoteAmount) || 0;
+                if (cf.estimatedAnnualSavings) return (Number(cf.estimatedAnnualSavings) || 0) * 4;
+                if (cf.monthlyBill) return (Number(cf.monthlyBill) || 0) * 50;
+            } catch (e) {}
+            return (l.productType && l.productType.toLowerCase().includes('pump')) ? 250000 : 150000;
+        };
+
+        const pipelineValue = leads
+            .filter(l => l.pipelineStage !== 'Closed Lost')
+            .reduce((sum, l) => sum + getLeadValue(l), 0);
+
+        // MoM / Previous period trend calculations
+        const now = new Date();
+        const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+        const thisMonthLeads = leads.filter(l => new Date(l.createdAt) >= firstDayThisMonth);
+        const lastMonthLeads = leads.filter(l => {
+            const d = new Date(l.createdAt);
+            return d >= firstDayLastMonth && d <= lastDayLastMonth;
+        });
+
+        const calcTrend = (curr, prev) => {
+            if (prev === 0) {
+                if (curr === 0) return { value: 0, isPositive: true };
+                return { value: 100, isPositive: true };
+            }
+            const diff = ((curr - prev) / prev) * 100;
+            return {
+                value: parseFloat(Math.abs(diff).toFixed(1)),
+                isPositive: diff >= 0
+            };
+        };
+
+        const totalLeadsTrend = calcTrend(
+            thisMonthLeads.length,
+            lastMonthLeads.length
+        );
+
+        const verifiedLeadsTrend = calcTrend(
+            thisMonthLeads.filter(l => l.otpVerified || ['Survey', 'Quotation_Sent', 'Customer_Approved', 'Material_Dispatched', 'Installation', 'Completed'].includes(l.pipelineStage)).length,
+            lastMonthLeads.filter(l => l.otpVerified || ['Survey', 'Quotation_Sent', 'Customer_Approved', 'Material_Dispatched', 'Installation', 'Completed'].includes(l.pipelineStage)).length
+        );
+
+        const projectsWonTrend = calcTrend(
+            thisMonthLeads.filter(l => l.pipelineStage === 'Completed').length,
+            lastMonthLeads.filter(l => l.pipelineStage === 'Completed').length
+        );
+
+        const thisMonthVal = thisMonthLeads.filter(l => l.pipelineStage !== 'Lost').reduce((s, l) => s + getLeadValue(l), 0);
+        const lastMonthVal = lastMonthLeads.filter(l => l.pipelineStage !== 'Lost').reduce((s, l) => s + getLeadValue(l), 0);
+        const pipelineValueTrend = calcTrend(thisMonthVal, lastMonthVal);
+
+        // Task widget counts
+        const pendingVerifications = leads.filter(l => l.pipelineStage === 'New Lead' || !l.otpVerified).length;
+        const activeProposals = leads.filter(l => ['Proposal Sent', 'Negotiation/Finance'].includes(l.pipelineStage)).length;
+        const upcomingSurveys = leads.filter(l => l.pipelineStage === 'Site Survey Scheduled').length;
 
         return c.json({
             totalLeads,
-            activeLeads,
-            conversions,
-            avgConversionRate: (leadConversion * 100).toFixed(1) + '%'
+            verifiedLeads,
+            projectsWon,
+            pipelineValue,
+            totalLeadsTrend,
+            verifiedLeadsTrend,
+            projectsWonTrend,
+            pipelineValueTrend,
+            tasks: {
+                pendingVerifications,
+                activeProposals,
+                upcomingSurveys
+            }
         });
     } catch (e) {
         console.error("Dashboard Stats Error:", e);
@@ -55,35 +161,102 @@ export const getChartData = async (c) => {
     try {
         const prisma = c.get('prisma');
         const user = c.get('user');
+        const { vendorId, startDate, endDate, groupBy = 'month' } = c.req.query();
+
         let where = {};
         if (user.role === 'Vendor') {
-            where = { assignedVendorId: user.id };
+            where.assignedVendorId = user.id;
+        } else if (vendorId && vendorId !== 'all') {
+            where.assignedVendorId = vendorId;
+        }
+
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate);
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                where.createdAt.lte = end;
+            }
         }
 
         const leads = await prisma.lead.findMany({
             where,
-            select: { createdAt: true, pipelineStage: true }
+            select: { 
+                createdAt: true, 
+                pipelineStage: true, 
+                customFields: true, 
+                productType: true,
+                quotations: {
+                    select: { netCost: true, totalAmount: true },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
+                }
+            }
         });
 
+        const getLeadValue = (l) => {
+            try {
+                if (l.quotations && l.quotations.length > 0) {
+                    const latestQuo = l.quotations[0];
+                    if (latestQuo.netCost) return Number(latestQuo.netCost);
+                    if (latestQuo.totalAmount) return Number(latestQuo.totalAmount);
+                }
+                let cf = {};
+                if (typeof l.customFields === 'string') {
+                    cf = JSON.parse(l.customFields || '{}');
+                } else if (typeof l.customFields === 'object' && l.customFields !== null) {
+                    cf = l.customFields;
+                }
+                if (cf.quoteAmount) return Number(cf.quoteAmount) || 0;
+                if (cf.estimatedAnnualSavings) return (Number(cf.estimatedAnnualSavings) || 0) * 4;
+            } catch (e) {}
+            return (l.productType && l.productType.toLowerCase().includes('pump')) ? 250000 : 150000;
+        };
+
+        if (groupBy === 'day') {
+            const daysMap = new Map();
+            const now = new Date();
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+                const key = `${d.getDate()} ${d.toLocaleString('en-US', { month: 'short' })}`;
+                daysMap.set(key, { name: key, leads: 0, revenue: 0 });
+            }
+            leads.forEach(l => {
+                const d = new Date(l.createdAt);
+                const key = `${d.getDate()} ${d.toLocaleString('en-US', { month: 'short' })}`;
+                if (daysMap.has(key)) {
+                    const entry = daysMap.get(key);
+                    entry.leads++;
+                    if (l.pipelineStage === 'Completed') {
+                        entry.revenue += getLeadValue(l);
+                    } else {
+                        entry.revenue += Math.round(getLeadValue(l) * 0.2);
+                    }
+                }
+            });
+            const result = Array.from(daysMap.values());
+            return c.json({ timeSeriesLeads: result, timeSeriesRevenue: result });
+        }
+
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const timeSeriesLeads = months.map(m => ({ name: m, leads: 0, conversions: 0 }));
+        const timeSeriesMap = months.map(m => ({ name: m, leads: 0, revenue: 0 }));
 
         leads.forEach(l => {
             const d = new Date(l.createdAt);
             const m = d.getMonth();
-            timeSeriesLeads[m].leads++;
-            if (l.pipelineStage === 'Closed Won / Project') timeSeriesLeads[m].conversions++;
+            timeSeriesMap[m].leads++;
+            const val = getLeadValue(l);
+            if (l.pipelineStage === 'Completed') {
+                timeSeriesMap[m].revenue += val;
+            } else if (l.pipelineStage !== 'Lost') {
+                timeSeriesMap[m].revenue += Math.round(val * 0.2);
+            }
         });
 
-        // Mock revenue data for now based on conversions
-        const timeSeriesRevenue = timeSeriesLeads.map(item => ({
-            name: item.name,
-            revenue: item.conversions * 150000 // Average deal size 1.5L
-        }));
-
         return c.json({
-            timeSeriesLeads,
-            timeSeriesRevenue
+            timeSeriesLeads: timeSeriesMap,
+            timeSeriesRevenue: timeSeriesMap
         });
     } catch (e) {
         console.error("Chart Data Error:", e);
@@ -143,7 +316,11 @@ export const getLeadDetails = async (c) => {
             include: {
                 activityLog: { orderBy: { timestamp: 'desc' } },
                 documents: { orderBy: { uploadedAt: 'desc' } },
-                assignedTo: { select: { name: true, email: true } }
+                assignedTo: { select: { name: true, email: true } },
+                surveys: {
+                    orderBy: { createdAt: 'desc' },
+                    include: { assignedEngineer: { select: { id: true, name: true, email: true } } }
+                }
             }
         });
         if (!lead) return c.json({ message: 'Lead not found' }, 404);
@@ -178,6 +355,26 @@ export const updateLead = async (c) => {
             delete data.status;
         }
 
+        if (data.pipelineStage === 'Survey') {
+            try {
+                const existingSurvey = await prisma.survey.findFirst({ where: { leadId: id } });
+                if (!existingSurvey) {
+                    const surveyNo = `SV-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+                    await prisma.survey.create({
+                        data: {
+                            surveyNo,
+                            leadId: id,
+                            status: 'Pending',
+                            priority: 'Medium',
+                            progressPercent: 10
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Auto survey creation error:", err);
+            }
+        }
+
         // Stringify customFields if provided as an object (Prisma TEXT column requires string)
         if (data.customFields && typeof data.customFields === 'object') {
             data.customFields = JSON.stringify(data.customFields);
@@ -185,11 +382,18 @@ export const updateLead = async (c) => {
 
         const updatedLead = await prisma.lead.update({
             where: { id },
-            data
+            data,
+            include: {
+                activityLog: { orderBy: { timestamp: 'desc' } },
+                documents: { orderBy: { uploadedAt: 'desc' } },
+                assignedTo: { select: { name: true, email: true } }
+            }
         });
+
         return c.json({ 
             ...updatedLead, 
             status: updatedLead.pipelineStage,
+            notes: updatedLead.activityLog,
             customFields: typeof updatedLead.customFields === 'string' ? JSON.parse(updatedLead.customFields || '{}') : (updatedLead.customFields || {})
         });
     } catch (e) {
@@ -205,17 +409,31 @@ export const addLeadNote = async (c) => {
         const body = await c.req.json();
         const user = c.get('user');
         
-        // The schema has Activity model, not Note. Use Activity as the note storage.
         const content = body.content || body.note || '';
-        const activity = await prisma.activity.create({
+        await prisma.activity.create({
             data: { 
                 leadId: id, 
                 action: 'Note Added',
                 notes: content, 
-                user: user.name 
+                user: user ? user.name : 'System' 
             }
         });
-        return c.json(activity, 201);
+
+        const fullLead = await prisma.lead.findUnique({
+            where: { id },
+            include: {
+                activityLog: { orderBy: { timestamp: 'desc' } },
+                documents: { orderBy: { uploadedAt: 'desc' } },
+                assignedTo: { select: { name: true, email: true } }
+            }
+        });
+
+        return c.json({
+            ...fullLead,
+            status: fullLead.pipelineStage,
+            notes: fullLead.activityLog,
+            customFields: typeof fullLead.customFields === 'string' ? JSON.parse(fullLead.customFields || '{}') : (fullLead.customFields || {})
+        }, 201);
     } catch (e) {
         console.error("Add Note Error:", e);
         return c.json({ message: 'Error adding note' }, 500);
@@ -233,14 +451,14 @@ export const uploadLeadDocument = async (c) => {
         const buffer = await getBuffer(file);
         const key = `leads/${id}/${crypto.randomUUID()}-${file.name}`;
         
-        // Upload to R2
+        // Upload to R2 if available
         if (c.env.BUCKET) {
             await c.env.BUCKET.put(key, buffer, {
                 httpMetadata: { contentType: file.type }
             });
         }
 
-        const doc = await prisma.document.create({
+        await prisma.document.create({
             data: {
                 leadId: id,
                 filename: file.name,
@@ -249,7 +467,22 @@ export const uploadLeadDocument = async (c) => {
                 size: buffer.length
             }
         });
-        return c.json(doc, 201);
+
+        const fullLead = await prisma.lead.findUnique({
+            where: { id },
+            include: {
+                activityLog: { orderBy: { timestamp: 'desc' } },
+                documents: { orderBy: { uploadedAt: 'desc' } },
+                assignedTo: { select: { name: true, email: true } }
+            }
+        });
+
+        return c.json({
+            ...fullLead,
+            status: fullLead.pipelineStage,
+            notes: fullLead.activityLog,
+            customFields: typeof fullLead.customFields === 'string' ? JSON.parse(fullLead.customFields || '{}') : (fullLead.customFields || {})
+        }, 201);
     } catch (e) {
         console.error("Upload error:", e);
         return c.json({ message: 'Error uploading document' }, 500);
@@ -357,6 +590,28 @@ export const performBulkLeadAction = async (c) => {
             await prisma.lead.updateMany({ where: { id: { in: leadIds } }, data: { assignedVendorId: value } });
         } else if (action === 'status' || action === 'changeStage') {
             await prisma.lead.updateMany({ where: { id: { in: leadIds } }, data: { pipelineStage: value } });
+            
+            if (value === 'Survey') {
+                for (const id of leadIds) {
+                    try {
+                        const existingSurvey = await prisma.survey.findFirst({ where: { leadId: id } });
+                        if (!existingSurvey) {
+                            const surveyNo = `SV-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+                            await prisma.survey.create({
+                                data: {
+                                    surveyNo,
+                                    leadId: id,
+                                    status: 'Pending',
+                                    priority: 'Medium',
+                                    progressPercent: 10
+                                }
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Auto survey creation error (bulk):", err);
+                    }
+                }
+            }
         } else if (action === 'assignVendor') {
             await prisma.lead.updateMany({ where: { id: { in: leadIds } }, data: { assignedVendorId: value } });
         }

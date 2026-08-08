@@ -1,7 +1,7 @@
 import React, { useState, useRef, FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { User } from '../../types';
-import LoadingSpinner from '../LoadingSpinner.tsx';
+import LoadingSpinner from '../LoadingSpinner';
 
 interface EditProfileModalProps {
     user: User;
@@ -9,7 +9,7 @@ interface EditProfileModalProps {
     onSave: (data: { name: string; profileImage?: File }) => Promise<void>;
 }
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
 const DefaultAvatar: React.FC<{ className?: string }> = ({ className = 'h-32 w-32' }) => (
     <span className={`inline-block rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 shadow-lg ${className}`}>

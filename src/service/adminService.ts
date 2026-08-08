@@ -384,13 +384,180 @@ async function updateProduct(id: string, formData: FormData) {
   return handleResponse(response);
 }
 
-async function deleteProduct(id: string) {
+async function deleteInventoryProduct(id: string) {
   const response = await fetch(`${API_BASE_URL}/api/admin/products/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
   return handleResponse(response);
 }
+
+// === RESTORED METHODS START ===
+
+// INVENTORY
+async function getInventoryOverview(params?: { category?: string; search?: string }) {
+  const query = new URLSearchParams(params as any).toString();
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/overview?${query}`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function quickUpdateStock(id: string, data: { currentStock?: number; unitPrice?: number }) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/products/${id}/stock`, {
+    method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify(data)
+  });
+  return handleResponse(response);
+}
+
+async function getPurchaseOrders() {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/purchase-orders`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function createPurchaseOrder(data: Record<string, any>) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/purchase-orders`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+}
+
+async function confirmGRN(poId: string, data: Record<string, any>) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/grn/${poId}`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+}
+
+async function getInventoryAnalytics() {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/analytics`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function getPanelSerials() {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/panel-serials`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function addPanelSerial(data: Record<string, any>) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/panel-serials`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+}
+
+async function deletePanelSerial(id: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/panel-serials/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function generateDispatchChallan(data: Record<string, any>) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/dispatch`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+}
+
+async function createOrUpdateProduct(data: Record<string, any>) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/inventory/products`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+}
+
+// FINANCE
+async function getFinanceDashboardSummary(filters: { vendorId?: string; startDate?: string; endDate?: string } = {}) {
+  const params = new URLSearchParams(
+    Object.fromEntries(Object.entries(filters).filter(([, value]) => value && value !== "all"))
+  ).toString();
+  const response = await fetch(`${API_BASE_URL}/api/admin/finance/dashboard-summary?${params}`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function getProjectFinance(leadId: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/finance/${leadId}`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function addProjectExpense(leadId: string, data: Record<string, any>) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/finance/${leadId}/expenses`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+}
+
+async function updateProjectFinance(leadId: string, data: Record<string, any>) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/finance/${leadId}`, { method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+}
+
+async function deleteProjectExpense(id: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/finance/expenses/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+// SURVEYS
+async function getSurveys(params: any) {
+  const query = new URLSearchParams(params).toString();
+  const response = await fetch(`${API_BASE_URL}/api/admin/surveys?${query}`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function getSurveyById(id: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/surveys/${id}`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function assignSurvey(id: string, payload: any) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/surveys/${id}/assign`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  return handleResponse(response);
+}
+
+async function updateSurveySection(id: string, payload: any) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/surveys/${id}/section`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  return handleResponse(response);
+}
+
+async function updateSurveyStatus(id: string, payload: any) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/surveys/${id}`, { method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  return handleResponse(response);
+}
+
+async function reviewSurvey(id: string, payload: any) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/surveys/${id}/review`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  return handleResponse(response);
+}
+
+// LIFECYCLE
+async function getLeadLifecycle(id: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/leads/${id}/lifecycle`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function verifyLeadStage(id: string, payload: any) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/leads/${id}/stage-verify`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  return handleResponse(response);
+}
+
+async function overrideLeadStage(id: string, targetStage: string, overrideReason: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/leads/${id}/stage-override`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ targetStage, overrideReason }) });
+  return handleResponse(response);
+}
+
+// QUOTATIONS
+async function getQuotations(params: any) {
+  const query = new URLSearchParams(params).toString();
+  const response = await fetch(`${API_BASE_URL}/api/admin/quotations?${query}`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function getQuotationById(id: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/quotations/${id}`, { headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+async function saveQuotation(payload: any) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/quotations`, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  return handleResponse(response);
+}
+
+async function updateQuotationStatus(id: string, payload: any) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/quotations/${id}/status`, { method: "PATCH", headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  return handleResponse(response);
+}
+
+async function deleteQuotation(id: string) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/quotations/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+  return handleResponse(response);
+}
+
+// === RESTORED METHODS END ===
 
 export {
   getDashboardStats,
@@ -423,6 +590,38 @@ export {
   getProducts,
   createProduct,
   updateProduct,
-  deleteProduct,
+  
+  // Appended Exports
+  getInventoryOverview,
+  quickUpdateStock,
+  getPurchaseOrders,
+  createPurchaseOrder,
+  confirmGRN,
+  getInventoryAnalytics,
+  getPanelSerials,
+  addPanelSerial,
+  deletePanelSerial,
+  generateDispatchChallan,
+  createOrUpdateProduct,
+  deleteInventoryProduct,
+  getProjectFinance,
+  getFinanceDashboardSummary,
+  addProjectExpense,
+  updateProjectFinance,
+  deleteProjectExpense,
+  getSurveys,
+  getSurveyById,
+  assignSurvey,
+  updateSurveySection,
+  updateSurveyStatus,
+  reviewSurvey,
+  getLeadLifecycle,
+  verifyLeadStage,
+  overrideLeadStage,
+  getQuotations,
+  getQuotationById,
+  saveQuotation,
+  updateQuotationStatus,
+  deleteQuotation,
 };
 

@@ -134,7 +134,7 @@ export const RooftopWorkflowSection: React.FC<RooftopWorkflowSectionProps> = ({ 
                 [field]: value
             };
         } else {
-            optimisticLead[field as keyof Lead] = value as any;
+            (optimisticLead as any)[field] = value;
         }
         
         onUpdate(optimisticLead);

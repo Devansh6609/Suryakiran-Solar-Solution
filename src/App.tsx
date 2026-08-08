@@ -38,6 +38,10 @@ const DataExplorerPage = lazy(() => import('./pages/admin/DataExplorerPage'));
 const FormBuilderPage = lazy(() => import('./pages/admin/FormBuilderPage'));
 const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
 const QuotationGeneratorPage = lazy(() => import('./pages/admin/QuotationGeneratorPage'));
+const QuotationsListPage = lazy(() => import('./pages/admin/QuotationsListPage'));
+const SurveyDashboardPage = lazy(() => import('./pages/admin/SurveyDashboardPage'));
+const SurveyDetailPage = lazy(() => import('./pages/admin/SurveyDetailPage'));
+const InventoryPage = lazy(() => import('./pages/admin/InventoryPage'));
 
 const UserProfilePage = lazy(() => import('./pages/admin/UserProfilePage'));
 const VendorManagementPage = lazy(() => import('./pages/admin/VendorManagementPage'));
@@ -86,7 +90,12 @@ const AppRoutes: React.FC = () => {
                     <Route path="leads" element={<LeadsListPage />} />
                     <Route path="leads/manual" element={<ManualLeadEntryPage />} />
                     <Route path="leads/:leadId" element={<LeadDetailPage />} />
+                    <Route path="quotations" element={<QuotationsListPage />} />
+                    <Route path="surveys" element={<SurveyDashboardPage />} />
+                    <Route path="surveys/:surveyId" element={<SurveyDetailPage />} />
+                    <Route path="inventory" element={<InventoryPage />} />
                     <Route path="quotation/:leadId?" element={<QuotationGeneratorPage />} />
+                    <Route path="quotation/new/:leadId?" element={<QuotationGeneratorPage />} />
                     <Route path="data-explorer" element={<DataExplorerPage />} />
                     <Route path="form-builder" element={<FormBuilderPage />} />
                     <Route path="settings" element={<SettingsPage />} />

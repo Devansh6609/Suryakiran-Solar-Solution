@@ -16,6 +16,11 @@ import {
     CloudLightning
 } from 'lucide-react';
 import { CalculationResults } from '../utils/calculatorUtils';
+import { FormSchema } from '../types';
+
+const INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
 
 interface CalculatorFormProps {
     type: CalculatorType;
@@ -27,7 +32,7 @@ const InputField: React.FC<{
     label: string;
     name: string;
     type: string;
-    value: string;
+    value?: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     required?: boolean;
     placeholder?: string;
@@ -48,7 +53,7 @@ const InputField: React.FC<{
                 type={type}
                 name={name}
                 id={name}
-                value={value}
+                value={value !== undefined ? value : ''}
                 onChange={onChange}
                 required={required}
                 placeholder={placeholder}
@@ -127,6 +132,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue, cal
         email: '',
         phone: '',
         fatherName: '',
+        state: '',
         district: '',
         tehsil: '',
         village: '',
@@ -140,9 +146,25 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue, cal
     const [isLoading, setIsLoading] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
 
+    const [files, setFiles] = useState<Record<string, File>>({});
+    const [formSchema, setFormSchema] = useState<FormSchema>([]);
+
+    React.useEffect(() => {
+        const fetchSchema = async () => {
+            try {
+                const schema = await crmService.getFormSchema(type === 'rooftop' ? 'rooftop' : 'pump');
+                setFormSchema(schema);
+            } catch (err) {
+                console.error("Failed to load form schema", err);
+            }
+        };
+        fetchSchema();
+    }, [type]);
+
     const validateStep = (currentStep: number): boolean => {
         const newErrors: Record<string, string> = {};
         if (currentStep === 1) {
+            if (!formData.state) newErrors.state = "State required";
             if (!formData.district) newErrors.district = "District required";
             if (!formData.tehsil) newErrors.tehsil = "Tehsil required";
             if (!formData.village) newErrors.village = "Village required";
@@ -179,12 +201,22 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue, cal
                 customFields.subsidyEstimate = calculatorResults.subsidy;
             }
 
-            await crmService.createLead({
+            const newLead = await crmService.createLead({
                 ...formData,
                 productType: type === 'rooftop' ? 'Rooftop Solar' : 'Solar Pump',
                 source: 'Calculator_Form',
                 customFields
             });
+
+            // Upload files sequentially
+            for (const [fieldName, file] of Object.entries(files)) {
+                try {
+                    await crmService.uploadLeadFile(newLead.id, fieldName, file);
+                } catch (err) {
+                    console.error(`Failed to upload ${fieldName}`, err);
+                }
+            }
+
             setStep(3);
         } catch (err: any) {
             setApiError(err.message || 'Submission failed. Please try again.');
@@ -197,6 +229,14 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue, cal
         const { name, value, type: fieldType } = e.target as HTMLInputElement;
         const val = fieldType === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
         setFormData(prev => ({ ...prev, [name]: val }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, files: targetFiles } = e.target;
+        if (targetFiles && targetFiles.length > 0) {
+            setFiles(prev => ({ ...prev, [name]: targetFiles[0] }));
+        }
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
@@ -259,6 +299,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue, cal
                                 <h3 className="text-sm font-black text-text-primary tracking-widest uppercase text-xs">Location Details</h3>
                             </div>
 
+                            <SelectField label="State" name="state" value={formData.state} onChange={handleInputChange} icon={<MapPin size={16} />} options={INDIAN_STATES} error={errors.state} />
                             <InputField label="District" name="district" type="text" value={formData.district} onChange={handleInputChange} icon={<MapPin size={16} />} placeholder="Village district" error={errors.district} />
                             <InputField label="Tehsil" name="tehsil" type="text" value={formData.tehsil} onChange={handleInputChange} icon={<MapPin size={16} />} placeholder="Your tehsil" error={errors.tehsil} />
                             <div className="md:col-span-2">
@@ -290,6 +331,35 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ type, initialValue, cal
                                 <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleInputChange} icon={<FileText size={16} />} required={false} placeholder="Email (optional)" />
                             </div>
                         </div>
+
+                        {/* Dynamic Custom Fields from FormBuilder */}
+                        {formSchema.filter(field => !field.visibleInStates || field.visibleInStates.length === 0 || field.visibleInStates.includes(formData.state)).length > 0 && (
+                            <div className="pt-6 border-t border-glass-border/20">
+                                <h3 className="text-sm font-black text-text-primary tracking-widest uppercase text-xs mb-4 flex items-center gap-2">
+                                    <FileText size={18} className="text-neon-cyan" />
+                                    Custom Requirements
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {formSchema.filter(field => !field.visibleInStates || field.visibleInStates.length === 0 || field.visibleInStates.includes(formData.state)).map(field => {
+                                        if (field.type === 'select') {
+                                            return <SelectField key={field.id} label={field.label} name={field.name} value={(formData as Record<string, any>)[field.name] || ''} onChange={handleInputChange} options={field.options || []} required={field.required} />;
+                                        }
+                                        return (
+                                            <InputField
+                                                key={field.id}
+                                                label={field.label}
+                                                name={field.name}
+                                                type={field.type === 'image' ? 'file' : field.type}
+                                                value={field.type === 'image' ? undefined : ((formData as Record<string, any>)[field.name] || '')}
+                                                onChange={field.type === 'image' ? handleFileChange : handleInputChange}
+                                                required={field.required}
+                                                placeholder={field.placeholder}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="pt-6 border-t border-glass-border/20">
                             <div className="flex items-start mb-6">

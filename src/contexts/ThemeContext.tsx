@@ -1,27 +1,39 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'professional-dark' | 'professional-light' | 'deep-space' | 'midnight' | 'aurora';
+export type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
     theme: Theme;
     setTheme: (theme: Theme) => void;
+    isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [theme, setTheme] = useState<Theme>(() => {
-        const savedTheme = localStorage.getItem('admin-theme');
-        return (savedTheme as Theme) || 'deep-space';
+    const [theme, setThemeState] = useState<Theme>(() => {
+        const saved = localStorage.getItem('crm-theme');
+        if (saved === 'light' || saved === 'dark') return saved;
+        // Respect system preference
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     });
 
+    const setTheme = (t: Theme) => {
+        setThemeState(t);
+        localStorage.setItem('crm-theme', t);
+    };
+
     useEffect(() => {
-        localStorage.setItem('admin-theme', theme);
-        // DOM manipulation removed to isolate theme to AdminLayout
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
     }, [theme]);
 
     return (
-        <ThemeContext.Provider value={{ theme, setTheme }}>
+        <ThemeContext.Provider value={{ theme, setTheme, isDark: theme === 'dark' }}>
             {children}
         </ThemeContext.Provider>
     );

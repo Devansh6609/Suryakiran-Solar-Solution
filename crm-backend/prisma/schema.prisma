@@ -25,8 +25,10 @@ model User {
   profileImage String?
   resetToken   String?   @unique
 
-  assignedLeads Lead[] @relation("VendorLeads")
-  notifications Notification[]
+  assignedLeads     Lead[]      @relation("VendorLeads")
+  notifications     Notification[]
+  createdQuotations Quotation[] @relation("UserQuotations")
+  assignedSurveys   Survey[]    @relation("AssignedSurveys")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt // This attribute tells Prisma to manage this field automatically
@@ -77,6 +79,14 @@ model Lead {
 
   documents   Document[]
   activityLog Activity[]
+  quotations  Quotation[]
+  verifications StageVerification[]
+  materialChecklist MaterialChecklistItem[]
+  surveys     Survey[]
+  materialReservations MaterialReservation[]
+  dispatchChallans DispatchChallan[]
+  projectFinance   ProjectFinance?
+  projectExpenses  ProjectExpense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt // This attribute tells Prisma to manage this field automatically
@@ -130,12 +140,272 @@ model Notification {
 // WorkStatus: Pending, Material_Dispatched, Work_Complete
 
 model Product {
+  id           String   @id @default(cuid())
+  sku          String?  @unique
+  name         String
+  category     String
+  description  String
+  make         String
+  companyBrand String?  // Waaree, Adani, Tata Solar, Deye, AP Systems, Growatt, Havells, Custom Company Name
+  warranty     String?  @default("10 Years")
+  minStock     Int      @default(5)
+  maxStock     Int      @default(50)
+  currentStock Int      @default(25)
+  reservedStock Int     @default(0)
+  unitPrice    Float    @default(0)
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PurchaseOrder {
+  id               String   @id @default(cuid())
+  poNo             String   @unique
+  vendorName       String
+  vendorGst        String?
+  orderDate        String
+  expectedDelivery String?
+  totalAmount      Float    @default(0)
+  paymentStatus    String   @default("Pending") // Pending, Partial, Paid
+  status           String   @default("Ordered") // Draft, Ordered, Received, Cancelled
+  invoiceUrl       String?
+  grnNotes         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model StockMovement {
+  id           String   @id @default(cuid())
+  itemSku      String
+  itemName     String
+  category     String?
+  movementType String   // Purchase, GRN, Reserved, Dispatched, Received_On_Site, Installed, Damaged, Returned
+  quantity     Int
+  referenceNo  String?
+  notes        String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+}
+
+model MaterialReservation {
+  id            String   @id @default(cuid())
+  leadId        String
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  itemSku       String
+  itemName      String
+  reservedQty   Int      @default(0)
+  dispatchedQty Int      @default(0)
+  status        String   @default("Reserved") // Reserved, Dispatched, Installed
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DispatchChallan {
+  id              String   @id @default(cuid())
+  challanNo       String   @unique
+  leadId          String
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  dispatchDate    String
+  vehicleNo       String
+  driverName      String?
+  authorizedBy    String?
+  loadingPhotoUrl String?
+  remarks         String?
+  dispatchItems   String   @default("[]") // JSON array of {sku, name, qty, unitPrice}
+  totalMaterialCost Float  @default(0)
+  createdAt       DateTime @default(now())
+}
+
+model ProjectFinance {
+  id                    String   @id @default(cuid())
+  leadId                String   @unique
+  lead                  Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Income
+  quotationAmount       Float    @default(0)  // From approved quotation
+  advanceReceived       Float    @default(0)  // Advance payment from customer
+  finalPaymentReceived  Float    @default(0)  // Final payment received
+
+  // Expenses (auto + manual)
+  materialCost          Float    @default(0)  // Auto-calculated from dispatched inventory
+  laborCost             Float    @default(0)  // Manual entry
+  transportCost         Float    @default(0)  // Manual entry
+  electricianCost       Float    @default(0)  // Manual entry
+  otherExpenses         Float    @default(0)  // Manual entry
+
+  // Computed (stored for quick dashboard queries)
+  totalExpenses         Float    @default(0)  // Sum of all expenses
+  grossProfit           Float    @default(0)  // quotationAmount - totalExpenses
+  profitMargin          Float    @default(0)  // grossProfit / quotationAmount * 100
+
+  notes                 String?  @default("")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ProjectExpense {
   id          String   @id @default(cuid())
-  name        String
-  category    String
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  expenseType String   @default("Other") // Material, Labor, Transport, Electrician, Permit, Other
   description String
-  make        String
-  imageUrl    String?
+  amount      Float    @default(0)
+  paidTo      String?  @default("")
+  receiptUrl  String?
+  addedBy     String?  @default("Admin")
+  date        String?  @default("")
+  createdAt   DateTime @default(now())
+}
+
+model PanelSerialNumber {
+  id           String   @id @default(cuid())
+  serialNumber String   @unique
+  itemSku      String
+  itemName     String?
+  brand        String   @default("Waaree")
+  wattage      String?  @default("550W")
+  status       String   @default("In_Warehouse") // In_Warehouse, Reserved, Dispatched, Installed, Damaged, Returned
+  leadId       String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Quotation {
+  id            String   @id @default(cuid())
+  quotationNo   String   @unique
+  leadId        String?
+  lead          Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  clientName    String
+  clientPhone   String?
+  clientEmail   String?
+  systemSize    String?
+  totalAmount   Float    @default(0)
+  subsidy       Float    @default(0)
+  netCost       Float    @default(0)
+  version       Int      @default(1)
+  status        String   @default("Draft") // Draft, Sent, Viewed, Accepted, Rejected, Revision_Required, Expired, Converted
+  validUntil    String?
+  revisionNotes String?
+  quotationData String   @default("{}")
+  pdfData       String?
+  createdById   String?
+  createdBy     User?    @relation("UserQuotations", fields: [createdById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model StageVerification {
+  id           String   @id @default(cuid())
+  leadId       String
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  stage        String
+  status       String   @default("Completed")
+  verifiedBy   String?
+  assignedTo   String?
+  remarks      String?
+  evidenceData String   @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MaterialChecklistItem {
+  id            String   @id @default(cuid())
+  leadId        String
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  componentName String
+  requiredQty   String
+  receivedQty   String
+  condition     String   @default("Good")
+  photoUrl      String?
+  notes         String?
+  verifiedAt    DateTime @default(now())
+}
+
+model Survey {
+  id                 String   @id @default(cuid())
+  surveyNo           String   @unique
+  leadId             String
+  lead               Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  assignedEngineerId String?
+  assignedEngineer   User?    @relation("AssignedSurveys", fields: [assignedEngineerId], references: [id], onDelete: SetNull)
+  status             String   @default("Pending") // Pending, Assigned, Engineer Accepted, Travelling, Arrived at Site, Started, Paused, Submitted, Under Review, Approved, Rejected
+  priority           String   @default("Medium")  // Low, Medium, High, Urgent
+  scheduledDate      String?
+  scheduledTime      String?
+  progressPercent    Int      @default(0)
+  estimatedCapacity  Float    @default(0)
+  gpsLat             String?
+  gpsLng             String?
+  gpsAccuracy        Float?
+  customerSignature  String?
+  engineerSignature  String?
+  reviewRemarks      String?
+  approvedBy         String?
+  approvedAt         DateTime?
+  pdfUrl             String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  sections           SurveySection[]
+  obstacles          SurveyObstacle[]
+  materialEstimates  SurveyMaterialEstimate[]
+  media              SurveyMedia[]
+  approvalHistory    SurveyApprovalHistory[]
+}
+
+model SurveySection {
+  id          String   @id @default(cuid())
+  surveyId    String
+  survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  sectionName String
+  formData    String   @default("{}")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([surveyId, sectionName])
+}
+
+model SurveyObstacle {
+  id          String   @id @default(cuid())
+  surveyId    String
+  survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  name        String
+  dimensions  String?
+  photoUrl    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model SurveyMaterialEstimate {
+  id            String   @id @default(cuid())
+  surveyId      String
+  survey        Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  componentName String
+  estimatedQty  String
+  overriddenQty String?
+  overrideReason String?
+  createdAt     DateTime @default(now())
+}
+
+model SurveyMedia {
+  id        String   @id @default(cuid())
+  surveyId  String
+  survey    Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  category  String   // Roof_Photos, Meter_Photos, Electrical_Panel_Photos, Obstacle_Photos, Drone_Images, Videos, Documents
+  url       String
+  filename  String?
+  gpsData   String?  @default("{}")
+  comments  String?
+  createdAt DateTime @default(now())
+}
+
+model SurveyApprovalHistory {
+  id        String   @id @default(cuid())
+  surveyId  String
+  survey    Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  status    String   // Approved, Rejected, Changes_Requested
+  remarks   String?
+  reviewedBy String
+  createdAt DateTime @default(now())
 }

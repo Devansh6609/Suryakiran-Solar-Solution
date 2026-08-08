@@ -1,89 +1,197 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import Sidebar from '../../components/admin/Sidebar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCrmUpdates } from '../../contexts/CrmUpdatesContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import Toast from '../../components/admin/Toast';
 import { NotificationProvider } from '../../contexts/NotificationContext';
 import NotificationBell from '../../components/common/NotificationBell';
+import { ADMIN_NAV_LINKS } from '../../constants';
+import {
+    Menu, Sun, Moon, ChevronDown, LogOut, User,
+    LayoutDashboard, GitBranch, ClipboardCheck, FileText, Package
+} from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_CRM_API_URL || 'http://localhost:3001';
 
-interface AdminLayoutProps {
-    children: React.ReactNode;
-}
+/* ---- Theme Toggle ---- */
+const ThemeToggle: React.FC = () => {
+    const { theme, setTheme, isDark } = useTheme();
+    return (
+        <button
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150"
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            style={{
+                backgroundColor: 'rgb(var(--surface-2))',
+                color: 'rgb(var(--text-1))',
+                border: '1px solid rgb(var(--border-default))',
+            }}
+        >
+            {isDark
+                ? <Sun size={16} />
+                : <Moon size={16} />
+            }
+        </button>
+    );
+};
 
+/* ---- User Dropdown ---- */
 const UserDropdown: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false);
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    const DefaultAvatarIcon = () => (
-        <span className="inline-block h-9 w-9 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 ring-2 ring-gray-300 dark:ring-white/20">
-            <svg className="h-full w-full text-gray-300 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-        </span>
-    );
+    const handleLogout = () => {
+        logout();
+        window.location.hash = '/login';
+        window.location.reload();
+    };
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center space-x-3 hover:bg-black/10 dark:hover:bg-white/10 p-2 rounded-lg transition-colors">
-                {user?.profileImage ? (
-                    <img className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-300 dark:ring-white/20" src={`${API_BASE_URL}/files/${user.profileImage}`} alt="Admin user avatar" />
-                ) : (
-                    <DefaultAvatarIcon />
-                )}
-                <div className="text-left hidden md:block">
-                    <div className="font-semibold text-sm text-gray-800 dark:text-text-primary">{user?.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-text-secondary">{user?.role}</div>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-2.5 h-9 px-2.5 rounded-lg transition-all duration-150"
+                style={{
+                    backgroundColor: isOpen ? 'rgb(var(--surface-2))' : undefined,
+                    border: '1px solid transparent',
+                }}
+                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.backgroundColor = 'rgb(var(--surface-2))'; }}
+                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+                {/* Avatar */}
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                    style={{ backgroundColor: 'rgb(var(--accent))' }}>
+                    {user?.profileImage
+                        ? <img src={`${API_BASE_URL}/files/${user.profileImage}`} alt="avatar" className="w-7 h-7 rounded-full object-cover" />
+                        : user?.name?.charAt(0).toUpperCase()
+                    }
                 </div>
-                <svg className="w-4 h-4 text-gray-500 dark:text-text-secondary hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                <div className="text-left hidden sm:block">
+                    <p className="text-xs font-600 leading-none" style={{ color: 'rgb(var(--text-0))' }}>{user?.name}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: 'rgb(var(--text-2))' }}>{user?.role}</p>
+                </div>
+                <ChevronDown size={13} className={`transition-transform duration-200 hidden sm:block ${isOpen ? 'rotate-180' : ''}`}
+                    style={{ color: 'rgb(var(--text-2))' }} />
             </button>
+
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 backdrop-blur-lg rounded-lg shadow-lg py-1 z-[100] ring-1 ring-black/5 dark:ring-glass-border">
-                    <Link to="/admin/profile" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 dark:text-text-primary hover:bg-gray-100 dark:hover:bg-electric-blue">My Profile</Link>
+                <div className="absolute right-0 mt-1.5 w-44 rounded-xl border py-1 z-[200] anim-fade-up"
+                    style={{
+                        backgroundColor: 'rgb(var(--surface-1))',
+                        border: '1px solid rgb(var(--border-default))',
+                        boxShadow: 'var(--shadow-lg)',
+                    }}>
+                    <Link
+                        to="/admin/profile"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors"
+                        style={{ color: 'rgb(var(--text-1))' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgb(var(--surface-2))'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                        <User size={14} />
+                        My Profile
+                    </Link>
+                    <div className="my-1 border-t" style={{ borderColor: 'rgb(var(--border-muted))' }} />
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-colors"
+                        style={{ color: 'rgb(var(--color-danger))' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgb(var(--color-danger) / 0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                        <LogOut size={14} />
+                        Logout
+                    </button>
                 </div>
             )}
         </div>
     );
 };
 
+/* ---- Mobile Bottom Nav ---- */
+const BOTTOM_NAV_LINKS = [
+    { name: 'Dashboard',  path: '/admin',           icon: LayoutDashboard, end: true },
+    { name: 'Leads',      path: '/admin/leads',      icon: GitBranch,       end: false },
+    { name: 'Surveys',    path: '/admin/surveys',    icon: ClipboardCheck,  end: false },
+    { name: 'Quotes',     path: '/admin/quotations', icon: FileText,        end: false },
+    { name: 'Inventory',  path: '/admin/inventory',  icon: Package,         end: false },
+];
+
+const BottomNav: React.FC = () => {
+    const location = useLocation();
+    return (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t"
+            style={{
+                backgroundColor: 'rgb(var(--topbar-bg))',
+                borderColor: 'rgb(var(--border-default))',
+                paddingBottom: 'env(safe-area-inset-bottom)',
+            }}>
+            {BOTTOM_NAV_LINKS.map(link => {
+                const Icon = link.icon;
+                const isActive = link.end
+                    ? location.pathname === link.path
+                    : location.pathname.startsWith(link.path);
+                return (
+                    <NavLink
+                        key={link.path}
+                        to={link.path}
+                        end={link.end}
+                        className="flex-1 flex flex-col items-center justify-center py-2 gap-1 text-[10px] font-500 transition-colors"
+                        style={{ color: isActive ? 'rgb(var(--accent))' : 'rgb(var(--text-2))' }}
+                    >
+                        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                        <span>{link.name}</span>
+                    </NavLink>
+                );
+            })}
+        </div>
+    );
+};
+
+/* ---- Page breadcrumb ---- */
+const Breadcrumb: React.FC = () => {
+    const location = useLocation();
+    const parts = location.pathname.split('/').filter(Boolean);
+    const label = parts.length > 1
+        ? parts[parts.length - 1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        : 'Dashboard';
+    return (
+        <span className="text-sm font-600" style={{ color: 'rgb(var(--text-0))' }}>
+            {label}
+        </span>
+    );
+};
+
+/* ---- Main Layout ---- */
+interface AdminLayoutProps { children: React.ReactNode; }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const location = useLocation();
-    const { triggerUpdate } = useCrmUpdates();
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
-    const abortControllerRef = useRef<AbortController | null>(null);
-    const { theme } = useTheme();
+    const { isDark } = useTheme();
 
     useEffect(() => {
         setIsMobileSidebarOpen(false);
     }, [location.pathname]);
 
-    // ... (keep existing SSE useEffect)
-
-    const isDark = theme !== 'professional-light';
-
     return (
         <NotificationProvider>
-            <div
-                className={`flex h-screen font-sans overflow-hidden text-gray-900 dark:text-text-primary admin-root transition-colors duration-300 ${isDark ? 'dark' : ''}`}
-                data-theme={theme}
-            >
+            {/* Apply dark class via ThemeProvider on <html>, so crm-app just reads it */}
+            <div className={`crm-app flex h-dvh overflow-hidden`} style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+
+                {/* Sidebar */}
                 <Sidebar
                     isCollapsed={isSidebarCollapsed}
                     setCollapsed={setIsSidebarCollapsed}
@@ -91,36 +199,46 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     onMobileClose={() => setIsMobileSidebarOpen(false)}
                 />
 
+                {/* Main column */}
                 <div className="flex-1 flex flex-col min-w-0">
-                    <header className="relative z-20 flex justify-between items-center px-4 md:px-6 h-16 md:h-20 bg-white/80 dark:bg-glass-surface/50 backdrop-blur-lg border-b border-gray-300 dark:border-glass-border flex-shrink-0">
-                        <div className="flex items-center">
+
+                    {/* Topbar */}
+                    <header className="flex-shrink-0 h-[60px] flex items-center justify-between px-4 md:px-5 border-b z-20"
+                        style={{
+                            backgroundColor: 'rgb(var(--topbar-bg))',
+                            borderColor: 'rgb(var(--border-default))',
+                        }}>
+                        {/* Left: hamburger (mobile) + breadcrumb */}
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsMobileSidebarOpen(true)}
-                                className="p-2 rounded-md text-gray-500 dark:text-text-secondary md:hidden mr-2 active:bg-gray-100 dark:active:bg-white/10"
-                                aria-label="Open sidebar"
+                                className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                                style={{ color: 'rgb(var(--text-1))' }}
+                                aria-label="Open menu"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                <Menu size={20} />
                             </button>
-                            {/* Search Bar - Hidden on small mobile, visible on sm+ */}
-                            <div className="relative hidden sm:block">
-                                <input type="text" placeholder="Search..." className="bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-glass-border rounded-lg py-1.5 md:py-2 pl-9 md:pl-10 pr-4 text-xs md:text-sm focus:ring-neon-cyan focus:border-neon-cyan w-full max-w-[150px] md:max-w-xs transition-all" />
-                                <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-500 dark:text-text-secondary absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            </div>
+                            <Breadcrumb />
                         </div>
-                        <div className="flex items-center space-x-2 md:space-x-4">
-                            {/* ThemeToggle removed to enforce dark mode themes */}
+
+                        {/* Right: notifications + theme toggle + user */}
+                        <div className="flex items-center gap-2">
                             <NotificationBell />
+                            <ThemeToggle />
                             <UserDropdown />
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6">
-                        <div key={location.pathname} className="animate-fade-in">
+                    {/* Page content */}
+                    <main className="flex-1 overflow-y-auto overflow-x-hidden pb-[68px] md:pb-0">
+                        <div key={location.pathname} className="anim-fade-up" style={{ animationDuration: '0.25s' }}>
                             {children}
                         </div>
                     </main>
                 </div>
-                {toastMessage && <Toast message={toastMessage} type="info" onDismiss={() => setToastMessage(null)} />}
+
+                {/* Mobile bottom navigation */}
+                <BottomNav />
             </div>
         </NotificationProvider>
     );

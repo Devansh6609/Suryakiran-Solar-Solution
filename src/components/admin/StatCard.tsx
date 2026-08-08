@@ -1,55 +1,81 @@
 import React from 'react';
 import AnimatedCounter from '../AnimatedCounter';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface StatCardProps {
     title: string;
     value: string | number;
     icon: React.ReactNode;
-    colorClass: string;
-    trend?: {
-        value: number;
-        isPositive: boolean;
-    };
+    colorClass?: string;   // legacy prop - kept for compat
+    accent?: string;       // e.g. 'amber' | 'green' | 'blue' | 'red' | 'violet'
+    trend?: { value: number; isPositive: boolean; };
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, colorClass, trend }) => {
+const ACCENT_MAP: Record<string, { bg: string; icon: string; badge: string }> = {
+    amber:  { bg: 'rgb(245 158 11 / 0.1)', icon: 'rgb(245 158 11)', badge: 'rgb(245 158 11 / 0.15)' },
+    green:  { bg: 'rgb(16 185 129 / 0.1)', icon: 'rgb(16 185 129)', badge: 'rgb(16 185 129 / 0.15)' },
+    blue:   { bg: 'rgb(59 130 246 / 0.1)', icon: 'rgb(59 130 246)', badge: 'rgb(59 130 246 / 0.15)' },
+    red:    { bg: 'rgb(239 68 68 / 0.1)',  icon: 'rgb(239 68 68)',  badge: 'rgb(239 68 68 / 0.15)' },
+    violet: { bg: 'rgb(139 92 246 / 0.1)', icon: 'rgb(139 92 246)', badge: 'rgb(139 92 246 / 0.15)' },
+    cyan:   { bg: 'rgb(6 182 212 / 0.1)',  icon: 'rgb(6 182 212)',  badge: 'rgb(6 182 212 / 0.15)' },
+    orange: { bg: 'rgb(249 115 22 / 0.1)', icon: 'rgb(249 115 22)', badge: 'rgb(249 115 22 / 0.15)' },
+};
+
+// Map legacy colorClass values to new accent
+const legacyToAccent = (cls: string): string => {
+    if (cls?.includes('neon-cyan') || cls?.includes('cyan'))   return 'cyan';
+    if (cls?.includes('electric-blue') || cls?.includes('blue')) return 'blue';
+    if (cls?.includes('violet') || cls?.includes('bright'))    return 'violet';
+    if (cls?.includes('status-green') || cls?.includes('green')) return 'green';
+    if (cls?.includes('error-red') || cls?.includes('red'))    return 'red';
+    if (cls?.includes('amber') || cls?.includes('warning'))    return 'amber';
+    if (cls?.includes('orange'))  return 'orange';
+    return 'amber';
+};
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, colorClass, accent, trend }) => {
+    const key = accent || (colorClass ? legacyToAccent(colorClass) : 'amber');
+    const colors = ACCENT_MAP[key] || ACCENT_MAP.amber;
     const isNumeric = typeof value === 'number';
-    const numericValue = isNumeric ? value : parseFloat(value.replace(/[^0-9.]/g, ''));
+    const numericValue = isNumeric ? value : parseFloat(String(value).replace(/[^0-9.]/g, ''));
 
     return (
-        <div className="relative overflow-hidden bg-glass-surface/20 backdrop-blur-2xl border border-glass-border/30 p-6 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-500 group hover:-translate-y-2 hover:border-white/20">
-            {/* Background Accent Glow */}
-            <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${colorClass.replace('text-', 'bg-')}`} />
-
-            <div className="flex items-start justify-between relative z-10">
-                <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-text-secondary/60 uppercase tracking-[0.2em] mb-2">{title}</p>
-                    <div className="flex items-baseline gap-3">
-                        <div className="text-3xl font-black text-text-primary tracking-tight">
-                            {isNumeric ? (
-                                <AnimatedCounter target={numericValue} />
-                            ) : (
-                                value
-                            )}
-                        </div>
-                        {trend && (
-                            <div className={`flex items-center gap-0.5 text-[10px] font-black lg:text-xs ${trend.isPositive ? 'text-status-green' : 'text-error-red'}`}>
-                                <span>{trend.isPositive ? '↑' : '↓'}</span>
-                                <span>{trend.value}%</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className={`flex items-center justify-center w-14 h-14 rounded-2xl bg-white/5 border border-white/5 transition-all duration-500 group-hover:scale-110 group-hover:bg-white/10 ${colorClass}`}>
-                    <div className="h-7 w-7">
-                        {icon}
-                    </div>
+        <div className="crm-card p-5 flex items-start justify-between group transition-all duration-200 cursor-default"
+            style={{ borderRadius: '12px' }}>
+            <div className="flex-1 min-w-0">
+                <p className="text-xs font-500 mb-1 uppercase tracking-wide truncate"
+                    style={{ color: 'rgb(var(--text-2))' }}>
+                    {title}
+                </p>
+                <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl font-700 leading-none" style={{ color: 'rgb(var(--text-0))' }}>
+                        {isNumeric
+                            ? <AnimatedCounter target={numericValue} />
+                            : value
+                        }
+                    </span>
+                    {trend && (
+                        <span className="flex items-center gap-0.5 text-[11px] font-600 px-1.5 py-0.5 rounded-full"
+                            style={{
+                                color: trend.isPositive ? 'rgb(var(--color-success))' : 'rgb(var(--color-danger))',
+                                backgroundColor: trend.isPositive
+                                    ? 'rgb(var(--color-success) / 0.1)'
+                                    : 'rgb(var(--color-danger) / 0.1)',
+                            }}>
+                            {trend.isPositive
+                                ? <TrendingUp size={11} />
+                                : <TrendingDown size={11} />
+                            }
+                            {trend.value}%
+                        </span>
+                    )}
                 </div>
             </div>
 
-            {/* Decorative bottom line */}
-            <div className={`absolute bottom-0 left-0 h-1 w-0 group-hover:w-full transition-all duration-700 opacity-50 ${colorClass.replace('text-', 'bg-')}`} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ml-3 transition-transform duration-200 group-hover:scale-110"
+                style={{ backgroundColor: colors.bg, color: colors.icon }}>
+                <div className="w-5 h-5">{icon}</div>
+            </div>
         </div>
     );
 };

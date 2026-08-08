@@ -39,9 +39,9 @@ const FormSection: React.FC<{
     };
 
     const handleSaveField = (field: FormField) => {
-        if (editingField) { // Editing existing field
+        if (editingField) {
             setFields(fields.map(f => f.id === field.id ? field : f));
-        } else { // Adding new field
+        } else {
             setFields([...fields, field]);
         }
         setIsEditorOpen(false);
@@ -62,81 +62,75 @@ const FormSection: React.FC<{
     };
 
     return (
-        <div className="bg-glass-surface/40 backdrop-blur-3xl rounded-3xl border border-glass-border/30 shadow-glow-sm shadow-electric-blue/5 flex flex-col h-full relative overflow-hidden">
-            {/* Decorative Glow */}
-            <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/3 ${formType === CalculatorType.Rooftop ? 'bg-primary-green/10' : 'bg-electric-blue/10'}`}></div>
-
-            <div className="p-6 border-b border-glass-border/20 relative z-10 flex items-center justify-between">
-                <h3 className="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
-                    <span className={`p-2 rounded-xl text-white ${formType === CalculatorType.Rooftop ? 'bg-gradient-to-br from-primary-green to-emerald-600 shadow-glow-sm shadow-primary-green/30' : 'bg-gradient-to-br from-electric-blue to-accent-blue shadow-glow-sm shadow-electric-blue/30'}`}>
-                        <Settings2 size={18} />
-                    </span>
+        <div className="crm-card flex flex-col h-full relative overflow-hidden">
+            <div className="p-4 md:p-6 border-b flex items-center justify-between" style={{ borderColor: 'rgb(var(--border-muted))' }}>
+                <h3 className="text-lg font-700 flex items-center gap-2" style={{ color: 'rgb(var(--text-0))' }}>
+                    <Settings2 size={18} style={{ color: 'rgb(var(--accent))' }} />
                     {title} Form
                 </h3>
             </div>
 
-            <div className="p-6 flex-grow flex flex-col relative z-10">
+            <div className="p-4 md:p-6 flex-grow flex flex-col relative z-10 bg-[rgb(var(--surface-0))]">
                 {loading && (
                     <div className="flex justify-center p-8">
-                        <LoadingSpinner size="lg" className="text-neon-cyan" />
+                        <LoadingSpinner size="lg" />
                     </div>
                 )}
-                {error && <p className="text-error-red font-bold text-center p-4 bg-error-red/5 rounded-xl border border-error-red/10">{error}</p>}
+                {error && <p className="text-sm font-600 text-center p-4 mb-4 rounded-lg" style={{ color: 'rgb(var(--color-danger))', backgroundColor: 'rgb(var(--color-danger)/0.1)' }}>{error}</p>}
 
                 {!loading && (
                     <div className="space-y-3 flex-grow">
                         {fields.map((field, index) => (
-                            <div key={field.id} className="group flex items-center gap-4 p-3 bg-night-sky/50 hover:bg-white/5 border border-glass-border/30 rounded-xl transition-all">
-                                <div className="text-text-secondary/40 group-hover:text-neon-cyan/60 transition-colors cursor-grab active:cursor-grabbing">
-                                    <GripVertical size={18} />
+                            <div key={field.id} className="group flex items-center gap-3 p-3 bg-[rgb(var(--surface-1))] border border-[rgb(var(--border-default))] rounded-xl transition-all hover:border-[rgb(var(--accent))]">
+                                <div className="cursor-grab active:cursor-grabbing text-[rgb(var(--text-3))]">
+                                    <GripVertical size={16} />
                                 </div>
                                 <div className="flex-grow min-w-0">
-                                    <p className="font-bold text-text-primary truncate flex items-center gap-2">
+                                    <p className="font-600 text-sm truncate flex items-center gap-2" style={{ color: 'rgb(var(--text-0))' }}>
                                         {field.label}
-                                        {field.required && <span className="text-error-red text-lg leading-none">*</span>}
-                                        <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-text-secondary uppercase tracking-widest font-black ml-2">
+                                        {field.required && <span style={{ color: 'rgb(var(--color-danger))' }}>*</span>}
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-700 ml-2" style={{ backgroundColor: 'rgb(var(--surface-2))', color: 'rgb(var(--text-2))' }}>
                                             {field.type}
                                         </span>
                                     </p>
-                                    <p className="text-xs text-text-secondary/60 font-mono truncate mt-0.5">name: "{field.name}"</p>
+                                    <p className="text-xs font-500 font-mono truncate mt-1" style={{ color: 'rgb(var(--text-3))' }}>name: "{field.name}"</p>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <div className="flex flex-col border-r border-glass-border/20 pr-2 mr-1">
-                                        <button onClick={() => handleMove(index, 'up')} disabled={index === 0} className="text-text-secondary hover:text-neon-cyan disabled:opacity-20 disabled:hover:text-text-secondary transition-colors p-0.5" title="Move Field Up" aria-label="Move Field Up">
+                                    <div className="flex flex-col border-r pr-2 mr-1" style={{ borderColor: 'rgb(var(--border-muted))' }}>
+                                        <button onClick={() => handleMove(index, 'up')} disabled={index === 0} className="p-0.5 disabled:opacity-20 transition-colors" style={{ color: 'rgb(var(--text-2))' }} title="Move Up">
                                             <ChevronUp size={14} />
                                         </button>
-                                        <button onClick={() => handleMove(index, 'down')} disabled={index === fields.length - 1} className="text-text-secondary hover:text-neon-cyan disabled:opacity-20 disabled:hover:text-text-secondary transition-colors p-0.5 mt-0.5" title="Move Field Down" aria-label="Move Field Down">
+                                        <button onClick={() => handleMove(index, 'down')} disabled={index === fields.length - 1} className="p-0.5 mt-0.5 disabled:opacity-20 transition-colors" style={{ color: 'rgb(var(--text-2))' }} title="Move Down">
                                             <ChevronDown size={14} />
                                         </button>
                                     </div>
-                                    <button onClick={() => { setEditingField(field); setIsEditorOpen(true); }} className="p-2 text-text-secondary hover:text-neon-cyan hover:bg-neon-cyan/10 rounded-lg transition-all" title="Edit Field">
+                                    <button onClick={() => { setEditingField(field); setIsEditorOpen(true); }} className="p-1.5 rounded-lg transition-colors hover:bg-[rgb(var(--surface-2))]" style={{ color: 'rgb(var(--text-2))' }} title="Edit">
                                         <Edit2 size={16} />
                                     </button>
-                                    <button onClick={() => handleDelete(field.id)} className="p-2 text-text-secondary hover:text-error-red hover:bg-error-red/10 rounded-lg transition-all" title="Delete Field">
+                                    <button onClick={() => handleDelete(field.id)} className="p-1.5 rounded-lg transition-colors text-[rgb(var(--color-danger))] hover:bg-[rgb(var(--color-danger)/0.1)]" title="Delete">
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
                             </div>
                         ))}
 
-                        <button onClick={() => { setEditingField(null); setIsEditorOpen(true); }} className="w-full mt-4 flex items-center justify-center gap-2 bg-neon-cyan/5 text-neon-cyan border border-neon-cyan/20 hover:bg-neon-cyan/10 font-bold py-3 rounded-xl transition-all border-dashed tracking-wide text-sm">
-                            <Plus size={18} />
-                            ADD NEW FIELD
+                        <button onClick={() => { setEditingField(null); setIsEditorOpen(true); }} className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed text-sm font-600 transition-colors" style={{ color: 'rgb(var(--accent))', borderColor: 'rgb(var(--accent)/0.3)', backgroundColor: 'rgb(var(--accent)/0.05)' }}>
+                            <Plus size={16} /> ADD NEW FIELD
                         </button>
                     </div>
                 )}
             </div>
 
-            <div className="p-6 border-t border-glass-border/20 bg-black/10 relative z-10 mt-auto">
-                <button onClick={handleSaveChanges} disabled={isSaving || loading} className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-neon-cyan to-electric-blue text-night-sky font-black py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-glow-sm shadow-neon-cyan/30 tracking-wide disabled:opacity-50 disabled:cursor-not-allowed">
+            <div className="p-4 md:p-6 border-t" style={{ borderColor: 'rgb(var(--border-muted))', backgroundColor: 'rgb(var(--surface-1))' }}>
+                <button onClick={handleSaveChanges} disabled={isSaving || loading} className="w-full crm-btn-primary py-2.5 justify-center">
                     {isSaving ? (
                         <>
-                            <LoadingSpinner size="sm" className="!w-4 !h-4 text-night-sky mr-2" />
+                            <LoadingSpinner size="sm" />
                             SAVING...
                         </>
                     ) : (
                         <>
-                            <Save size={18} />
+                            <Save size={16} />
                             SAVE CHANGES
                         </>
                     )}
@@ -157,26 +151,18 @@ const FormSection: React.FC<{
 
 const FormBuilderPage: React.FC = () => {
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 animate-fade-in pb-24">
-            {/* Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <div className="px-3 py-1 rounded-full bg-warning-yellow/10 border border-warning-yellow/20 text-warning-yellow text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Settings size={12} className="text-warning-yellow" />
-                            Configuration
-                        </div>
+        <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 anim-fade-up">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <div>
+                    <div className="flex items-center gap-2 text-xs font-600 mb-0.5" style={{ color: 'rgb(var(--color-warning))' }}>
+                        <Settings size={14} /> Configuration
                     </div>
-                    <h1 className="text-4xl lg:text-5xl font-black text-text-primary tracking-tight">
-                        Form <span className="text-warning-yellow">Builder</span>
-                    </h1>
-                    <p className="text-text-secondary/60 text-sm font-bold">
-                        Customize public-facing calculators. Changes are published immediately.
-                    </p>
+                    <h1 className="text-2xl font-700" style={{ color: 'rgb(var(--text-0))' }}>Form Builder</h1>
+                    <p className="text-xs font-500 mt-1" style={{ color: 'rgb(var(--text-2))' }}>Customize public-facing calculators. Changes are published immediately.</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                 <FormSection title="Rooftop Solar" formType={CalculatorType.Rooftop} />
                 <FormSection title="Solar Pump" formType={CalculatorType.Pump} />
             </div>

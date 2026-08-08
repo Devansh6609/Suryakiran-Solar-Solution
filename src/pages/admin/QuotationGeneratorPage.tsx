@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Edit3, Eye, Sun, Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
-import { getLeadDetails, getProducts } from '../../service/adminService';
+import { getLeadDetails, getProducts, saveQuotation } from '../../service/adminService';
 import { Logo } from '../../constants';
 import logoIcon from '../../assets/logo-icon.png';
 import Card from '../../components/admin/Card';
@@ -195,7 +195,7 @@ const QuotationGeneratorPage: React.FC = () => {
         });
     };
 
-    const handleBomChange = (idx: number, field: 'description' | 'make', value: string) => {
+    const handleBomChange = (idx: number, field: 'name' | 'description' | 'make' | 'imageUrl', value: string) => {
         setBom(prev => {
             const updated = [...prev];
             updated[idx] = { ...updated[idx], [field]: value };
@@ -274,6 +274,25 @@ const QuotationGeneratorPage: React.FC = () => {
             }
             
             previewRef.current.style.transform = originalTransform;
+            
+            const pdfData = pdf.output('datauristring');
+
+            try {
+                await saveQuotation({
+                    leadId: leadId || null,
+                    clientName: data.clientName,
+                    clientPhone: data.clientPhone,
+                    clientEmail: data.companyEmail,
+                    systemSize: `${data.plantCapacity} kW`,
+                    totalAmount: data.totalAmount,
+                    subsidy: data.subsidyAmount,
+                    netCost: data.finalAmount,
+                    quotationData: { data, bom },
+                    pdfData
+                });
+            } catch (saveErr) {
+                console.error("Failed to save quotation record", saveErr);
+            }
             
             pdf.save(`Varcas_Energy_Quotation_${data.clientName.replace(/\s+/g, '_') || 'Customer'}_${data.quotationDate}.pdf`);
         } catch (error) {
@@ -406,10 +425,33 @@ const QuotationGeneratorPage: React.FC = () => {
                                                     <label className="text-[9px] font-black uppercase tracking-widest text-text-secondary ml-1">Brand / Make</label>
                                                     <input
                                                         type="text"
+                                                        list={`makes-${idx}`}
                                                         value={item.make}
-                                                        onChange={(e) => handleBomChange(idx, 'make', e.target.value)}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            handleBomChange(idx, 'make', val);
+                                                            // Auto-fill description/image if matching product found
+                                                            const matchedProd = dbProducts.find(p => p.category === item.category && p.make === val);
+                                                            if (matchedProd) {
+                                                                if (item.category !== 'Solar Module' && item.category !== 'Solar Inverter') {
+                                                                    handleBomChange(idx, 'description', matchedProd.description || '');
+                                                                }
+                                                                if (matchedProd.imageUrl) {
+                                                                    let imgUrl = matchedProd.imageUrl;
+                                                                    if (!imgUrl.startsWith('http') && !imgUrl.startsWith('/assets/')) {
+                                                                        imgUrl = `${API_BASE_URL}${imgUrl}`;
+                                                                    }
+                                                                    handleBomChange(idx, 'imageUrl', imgUrl);
+                                                                }
+                                                            }
+                                                        }}
                                                         className="w-full bg-white/5 border border-glass-border/30 rounded-xl px-3 py-2 text-xs font-bold text-text-primary focus:ring-2 focus:ring-neon-cyan/50 focus:border-neon-cyan outline-none transition-all"
                                                     />
+                                                    <datalist id={`makes-${idx}`}>
+                                                        {dbProducts.filter(p => p.category === item.category).map(p => (
+                                                            <option key={p.id} value={p.make} />
+                                                        ))}
+                                                    </datalist>
                                                 </div>
                                             </div>
                                         </div>

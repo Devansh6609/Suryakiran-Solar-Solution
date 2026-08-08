@@ -1,196 +1,408 @@
+/* --- Google Font --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================
+   VARCAS CRM — Design System v2.0
+   "Solar Pro" — Clean, Warm, Professional
+   ============================================ */
 
 html {
   scroll-behavior: smooth;
 }
 
-@media (max-width: 640px) {
-  html {
-    font-size: 14px;
+/* ============================================
+   DESIGN TOKENS — Light Mode (default)
+   ============================================ */
+:root {
+  /* Surfaces */
+  --surface-base:   255 255 255;  /* Page background */
+  --surface-0:      249 250 251;  /* App background  */
+  --surface-1:      255 255 255;  /* Card background */
+  --surface-2:      243 244 246;  /* Hover / muted   */
+  --surface-3:      229 231 235;  /* Pressed / input  */
+
+  /* Borders */
+  --border-default: 226 232 240;
+  --border-muted:   241 245 249;
+  --border-strong:  203 213 225;
+
+  /* Brand Accent — Solar Amber */
+  --accent:         245 158 11;   /* #F59E0B */
+  --accent-hover:   217 119 6;    /* #D97706 */
+  --accent-muted:   254 243 199;  /* amber-100 */
+  --accent-text:    146 64 14;    /* amber-800 for light bg text */
+
+  /* Semantic */
+  --color-success:  16 185 129;   /* emerald-500 */
+  --color-danger:   239 68 68;    /* red-500     */
+  --color-info:     59 130 246;   /* blue-500    */
+  --color-warning:  245 158 11;   /* amber-500   */
+  --color-violet:   139 92 246;   /* violet-500  */
+  --color-cyan:     6 182 212;    /* cyan-500    */
+  --color-orange:   249 115 22;   /* orange-500  */
+
+  /* Text */
+  --text-0:         15 23 42;     /* slate-900  — headings */
+  --text-1:         51 65 85;     /* slate-700  — body     */
+  --text-2:         100 116 139;  /* slate-500  — secondary */
+  --text-3:         148 163 184;  /* slate-400  — muted    */
+  --text-inv:       255 255 255;  /* white — on dark bg    */
+
+  /* Sidebar */
+  --sidebar-bg:     255 255 255;
+  --sidebar-border: 226 232 240;
+  --topbar-bg:      255 255 255;
+
+  /* Shadow */
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+}
+
+/* ============================================
+   DESIGN TOKENS — Dark Mode
+   ============================================ */
+.dark {
+  /* Surfaces */
+  --surface-base:   10 13 20;     /* Deepest bg */
+  --surface-0:      12 14 19;     /* App background */
+  --surface-1:      18 21 30;     /* Card background */
+  --surface-2:      26 30 43;     /* Hover / elevated */
+  --surface-3:      35 40 58;     /* Input / pressed  */
+
+  /* Borders */
+  --border-default: 35 41 58;
+  --border-muted:   25 30 44;
+  --border-strong:  52 59 80;
+
+  /* Brand Accent — same amber in dark */
+  --accent:         245 158 11;
+  --accent-hover:   251 191 36;
+  --accent-muted:   120 53 15;    /* amber-900 */
+  --accent-text:    253 230 138;  /* amber-200 for dark bg */
+
+  /* Text */
+  --text-0:         248 250 252;  /* slate-50  */
+  --text-1:         203 213 225;  /* slate-300 */
+  --text-2:         100 116 139;  /* slate-500 */
+  --text-3:         51 65 85;     /* slate-700 */
+  --text-inv:       10 13 20;     /* dark bg   */
+
+  /* Sidebar */
+  --sidebar-bg:     14 17 26;
+  --sidebar-border: 28 33 50;
+  --topbar-bg:      14 17 26;
+
+  /* Shadow — more prominent in dark */
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply text-slate-900;
+}
+
+/* ============================================
+   ADMIN CRM STYLES
+   ============================================ */
+.crm-app {
+  background-color: rgb(var(--surface-0));
+  color: rgb(var(--text-0));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100dvh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ---- Scrollbar ---- */
+.crm-app ::-webkit-scrollbar { width: 5px; height: 5px; }
+.crm-app ::-webkit-scrollbar-track { background: transparent; }
+.crm-app ::-webkit-scrollbar-thumb {
+  background: rgb(var(--border-strong));
+  border-radius: 99px;
+}
+.crm-app ::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--accent));
+}
+
+/* ============================================
+   COMPONENT PRIMITIVES
+   ============================================ */
+
+/* Surface cards */
+.crm-card {
+  background-color: rgb(var(--surface-1));
+  border: 1px solid rgb(var(--border-default));
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.crm-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgb(var(--border-strong));
+}
+
+/* Form inputs */
+.crm-input {
+  background-color: rgb(var(--surface-1));
+  border: 1px solid rgb(var(--border-default));
+  border-radius: 8px;
+  color: rgb(var(--text-0));
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+  -webkit-appearance: none;
+}
+.crm-input:focus {
+  border-color: rgb(var(--accent));
+  box-shadow: 0 0 0 3px rgb(var(--accent) / 0.15);
+}
+.crm-input::placeholder {
+  color: rgb(var(--text-3));
+}
+
+/* Buttons */
+.crm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgb(var(--accent));
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.crm-btn-primary:hover {
+  background-color: rgb(var(--accent-hover));
+  box-shadow: 0 4px 12px rgb(var(--accent) / 0.4);
+}
+.crm-btn-primary:active { transform: scale(0.97); }
+
+.crm-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgb(var(--surface-2));
+  color: rgb(var(--text-1));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgb(var(--border-default));
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.crm-btn-secondary:hover {
+  background-color: rgb(var(--surface-3));
+  border-color: rgb(var(--border-strong));
+  color: rgb(var(--text-0));
+}
+.crm-btn-secondary:active { transform: scale(0.97); }
+
+/* Sidebar nav item */
+.crm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  color: rgb(var(--text-2));
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.crm-nav-item:hover {
+  background-color: rgb(var(--surface-2));
+  color: rgb(var(--text-0));
+}
+.crm-nav-item.active {
+  background-color: rgb(var(--accent) / 0.1);
+  color: rgb(var(--accent));
+  font-weight: 600;
+}
+
+/* Status badges */
+.crm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+/* Table */
+.crm-table { width: 100%; border-collapse: collapse; }
+.crm-table th {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgb(var(--text-2));
+  padding: 0.625rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgb(var(--border-default));
+  background: rgb(var(--surface-2));
+}
+.crm-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgb(var(--border-muted));
+  font-size: 0.875rem;
+  color: rgb(var(--text-1));
+}
+.crm-table tr:last-child td { border-bottom: none; }
+.crm-table tbody tr {
+  transition: background-color 0.1s ease;
+  cursor: pointer;
+}
+.crm-table tbody tr:hover {
+  background-color: rgb(var(--surface-2));
+}
+
+/* ============================================
+   UTILITY ANIMATIONS
+   ============================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.anim-fade-up   { animation: fadeUp 0.3s ease both; }
+.anim-fade-in   { animation: fadeIn 0.25s ease both; }
+.anim-slide-right { animation: slideRight 0.3s ease both; }
+
+/* Stagger children */
+.anim-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.anim-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.anim-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.anim-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.anim-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.anim-stagger > *:nth-child(6) { animation-delay: 250ms; }
+
+/* Skeleton shimmer */
+.crm-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--surface-2)) 25%,
+    rgb(var(--surface-3)) 50%,
+    rgb(var(--surface-2)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   Mobile utilities
+   ============================================ */
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Mobile card fallback for tables */
+@media (max-width: 767px) {
+  .mobile-card-list table,
+  .mobile-card-list thead,
+  .mobile-card-list tbody,
+  .mobile-card-list th,
+  .mobile-card-list td,
+  .mobile-card-list tr {
+    display: block;
+  }
+  .mobile-card-list thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  .mobile-card-list tbody tr {
+    border: 1px solid rgb(var(--border-default));
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: rgb(var(--surface-1));
+    cursor: pointer;
+  }
+  .mobile-card-list td {
+    border: none;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+  .mobile-card-list td:before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: rgb(var(--text-3));
+    margin-bottom: 2px;
   }
 }
 
-body {
-  @apply bg-gray-100 font-sans text-gray-900;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ============================================
+   PUBLIC WEBSITE STYLES (unchanged)
+   ============================================ */
+@media (max-width: 640px) {
+  html { font-size: 14px; }
 }
 
-/* Apply electric gradient background ONLY for the dark theme (CRM) */
-/* --- Theme Variables --- */
-/* --- Theme Variables (RGB Channels) --- */
-/* --- Theme Variables --- */
-:root {
-  /* Default Theme: Deep Space Glass - Kept at root for fallback if needed, or move to .admin-root default */
-  --bg-primary: 15 23 42; 
-  --bg-secondary: 30 27 75; 
-  --bg-glass: 15 23 42; 
-  --border-glass: 255 255 255; 
-  
-  --accent-primary: 59 130 246; 
-  --accent-primary-hover: 96 165 250; 
-  --accent-secondary: 6 182 212; 
-  --accent-tertiary: 167 139 250; 
-  --accent-glow: 56 189 248; 
-  
-  --text-primary: 248 250 252; 
-  --text-secondary: 148 163 184; 
-  --text-accent: 103 232 249; 
-  
-  --glass-opacity: 0.4;
-  --glass-border-opacity: 0.1;
-  
-  --gradient-stops: rgb(var(--bg-primary)), rgb(var(--bg-secondary));
-}
-
-.admin-root[data-theme='professional-dark'] {
-  /* Theme: Professional Dark (Pitch Black) */
-  --bg-primary: 0 0 0; 
-  --bg-secondary: 23 23 23; 
-  --bg-glass: 0 0 0; 
-  --border-glass: 38 38 38; 
-  
-  --accent-primary: 16 185 129; 
-  --accent-primary-hover: 5 150 105; 
-  --accent-secondary: 82 82 82; 
-  --accent-tertiary: 115 115 115; 
-  --accent-glow: 16 185 129; 
-  
-  --text-primary: 255 255 255; 
-  --text-secondary: 163 163 163; 
-  --text-accent: 52 211 153; 
-  
-  --glass-opacity: 0.95;
-  --glass-border-opacity: 1;
-  
-  --gradient-stops: rgb(var(--bg-primary)), rgb(var(--bg-secondary));
-}
-
-.admin-root[data-theme='professional-light'] {
-  /* Theme: Professional Light (Clean Corporate) */
-  --bg-primary: 241 245 249; 
-  --bg-secondary: 226 232 240; 
-  --bg-glass: 255 255 255; 
-  --border-glass: 203 213 225; 
-  
-  --accent-primary: 37 99 235; 
-  --accent-primary-hover: 29 78 216; 
-  --accent-secondary: 71 85 105; 
-  --accent-tertiary: 100 116 139; 
-  --accent-glow: 255 255 255; 
-  
-  --text-primary: 15 23 42; 
-  --text-secondary: 71 85 105; 
-  --text-accent: 37 99 235; 
-  
-  --glass-opacity: 0.95;
-  --glass-border-opacity: 1;
-  
-  --gradient-stops: 241 245 249, 226 232 240;
-}
-
-.admin-root[data-theme='midnight'] {
-  /* Theme: Midnight Obsidian */
-  --bg-primary: 2 6 23; 
-  --bg-secondary: 30 41 59; 
-  --bg-glass: 30 41 59; 
-  --border-glass: 255 255 255; 
-  
-  --accent-primary: 245 158 11; 
-  --accent-primary-hover: 251 191 36; 
-  --accent-secondary: 249 115 22; 
-  --accent-tertiary: 217 119 6; 
-  --accent-glow: 245 158 11; 
-  
-  --text-primary: 255 255 255;
-  --text-secondary: 203 213 225; 
-  --text-accent: 252 211 77; 
-  
-  --glass-opacity: 0.9;
-  --glass-border-opacity: 0.1;
-  
-  --gradient-stops: rgb(var(--bg-primary)), rgb(var(--bg-secondary));
-}
-
-.admin-root[data-theme='aurora'] {
-  /* Theme: Aurora Borealis */
-  --bg-primary: 2 6 23; 
-  --bg-secondary: 15 23 42; 
-  --bg-glass: 15 23 42; 
-  --border-glass: 255 255 255; 
-  
-  --accent-primary: 52 211 153; 
-  --accent-primary-hover: 16 185 129; 
-  --accent-secondary: 167 139 250; 
-  --accent-tertiary: 244 114 182; 
-  --accent-glow: 52 211 153; 
-  
-  --text-primary: 241 245 249; 
-  --text-secondary: 148 163 184; 
-  --text-accent: 110 231 183; 
-  
-  --glass-opacity: 0.3;
-  --glass-border-opacity: 0.1;
-  
-  --gradient-stops: rgb(var(--bg-primary)), rgb(var(--bg-secondary));
-}
-
-/* Apply electric gradient background ONLY for the scoped admin container */
-.admin-root.dark {
-  background: linear-gradient(135deg, var(--gradient-stops));
-  background-attachment: fixed;
-  color: rgb(var(--text-primary));
-}
-
-/* Aurora Animation Background */
-.admin-root[data-theme='aurora'] {
-    background: linear-gradient(125deg, #020617 0%, #0f172a 30%, #1e1b4b 50%, #0f172a 70%, #115e59 85%, #020617 100%);
-    background-size: 300% 300%;
-    animation: auroraGradient 25s ease infinite;
-}
-
-@keyframes auroraGradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-/* Custom Scrollbar for the new electric theme */
-.admin-root ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.admin-root ::-webkit-scrollbar-track {
-  background: transparent;
-}
-.admin-root ::-webkit-scrollbar-thumb {
-  background: rgba(var(--accent-primary), 0.3);
-  border-radius: 4px;
-  border: 1px solid rgba(var(--accent-primary), 0.5);
-}
-.admin-root ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--accent-primary), 0.5);
+body.public-site {
+  @apply bg-gray-100 text-gray-900;
 }
 
 @layer base {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-sans font-bold;
-  }
+  h1, h2, h3, h4, h5, h6 { @apply font-sans font-bold; }
 }
 
 @layer components {
-  /* For Desktop Nav on public site */
   .nav-link-animated {
     @apply relative py-2 px-4 block rounded-md text-base font-medium transition-colors duration-300;
   }
-
   .nav-link-animated::after {
     content: "";
     position: absolute;
@@ -203,75 +415,38 @@ body {
     transform-origin: bottom right;
     transition: transform 0.25s ease-out;
   }
-
-  .nav-link-animated.text-white::after {
-    background-color: white;
-  }
-
+  .nav-link-animated.text-white::after { background-color: white; }
   .nav-link-animated:hover::after,
   .nav-link-animated.active::after {
     transform: scaleX(1);
     transform-origin: bottom left;
   }
-
-  /* Homepage Panel styles for sticky stacking */
   .panel {
-    height: 100vh;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: sticky;
-    top: 0;
+    height: 100vh; width: 100%;
+    display: flex; align-items: center; justify-content: center;
+    position: sticky; top: 0;
   }
-
-  /* Glassmorphism Utilities */
   .glass-panel {
     @apply backdrop-blur-md shadow-xl;
     background-color: rgb(var(--bg-glass) / var(--glass-opacity));
     border: 1px solid rgb(var(--border-glass) / var(--glass-border-opacity));
   }
-
   .glass-card {
     @apply backdrop-blur-sm shadow-lg hover:bg-white/10 transition-all duration-300;
     background-color: rgb(var(--bg-glass) / var(--glass-opacity));
     border: 1px solid rgb(var(--border-glass) / var(--glass-border-opacity));
   }
-
-  /* Animations */
-  .animate-fade-in-up {
-    animation: fadeInUp 0.5s ease-out forwards;
-  }
-
-  .animate-slide-in-right {
-    animation: slideInRight 0.5s ease-out forwards;
-  }
+  .animate-fade-in-up { animation: fadeUp 0.5s ease-out forwards; }
+  .animate-slide-in-right { animation: slideRight 0.5s ease-out forwards; }
 }
 
 @layer utilities {
-  .text-glow {
-    text-shadow: 0 0 8px theme("colors.solar-gold");
-  }
+  .text-glow { text-shadow: 0 0 8px theme("colors.solar-gold"); }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+  .animate-marquee { animation: marquee 40s linear infinite; }
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+@keyframes marquee {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
 }

@@ -1,20 +1,33 @@
 import { calculateScore, getScoreStatus } from '../utils/leadScoring.js';
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Read the complete Indian states and districts JSON
+const locationsFilePath = path.join(__dirname, '../../data/india_locations.json');
+let indiaLocations = { states: [] };
+try {
+    indiaLocations = JSON.parse(fs.readFileSync(locationsFilePath, 'utf-8'));
+} catch (e) {
+    console.error("Failed to load india_locations.json", e);
+}
+
 export const getStates = async (c) => {
     try {
-        const prisma = c.get('prisma');
-        const users = await prisma.user.findMany({ where: { role: 'Vendor' }, select: { state: true } });
-        const states = [...new Set(users.map(u => u.state).filter(s => s))];
-        return c.json(states);
+        const stateNames = indiaLocations.states.map(s => s.state);
+        return c.json(stateNames);
     } catch (e) { return c.json({ message: 'Error fetching states' }, 500); }
 };
 
 export const getDistricts = async (c) => {
-    const state = decodeURIComponent(c.req.param('state'));
+    const stateName = decodeURIComponent(c.req.param('state'));
     try {
-        const prisma = c.get('prisma');
-        const users = await prisma.user.findMany({ where: { role: 'Vendor', state }, select: { district: true } });
-        const districts = [...new Set(users.map(u => u.district).filter(d => d))];
+        const stateObj = indiaLocations.states.find(s => s.state === stateName);
+        const districts = stateObj ? stateObj.districts : [];
         return c.json(districts);
     } catch (e) { return c.json({ message: 'Error fetching districts' }, 500); }
 };

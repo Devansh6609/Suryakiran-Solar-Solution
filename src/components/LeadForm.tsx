@@ -2,8 +2,13 @@ import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import * as crmService from '../service/crmService';
 import LoadingSpinner from './LoadingSpinner';
 import AnimatedSection from './AnimatedSection';
-import { UserPlus, MapPin, Phone, User, CheckCircle2, TrendingUp, Zap, Droplets } from 'lucide-react';
+import { UserPlus, MapPin, Phone, User, CheckCircle2, TrendingUp, Zap, Droplets, FileText } from 'lucide-react';
 import { CalculationResults } from '../utils/calculatorUtils';
+import { FormSchema } from '../types';
+
+const INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
 
 interface LeadFormProps {
     productType: 'rooftop' | 'pump';
@@ -20,6 +25,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
         email: '',
         phone: '',
         fatherName: '',
+        state: '',
         district: '',
         tehsil: '',
         village: '',
@@ -27,6 +33,20 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
         connectionType: '',
         consent: false
     });
+    const [files, setFiles] = useState<Record<string, File>>({});
+    const [formSchema, setFormSchema] = useState<FormSchema>([]);
+
+    useEffect(() => {
+        const fetchSchema = async () => {
+            try {
+                const schema = await crmService.getFormSchema(productType === 'rooftop' ? 'rooftop' : 'pump');
+                setFormSchema(schema);
+            } catch (err) {
+                console.error("Failed to load form schema", err);
+            }
+        };
+        fetchSchema();
+    }, [productType]);
 
     // Update HP/Connection Type if calculator results change
     useEffect(() => {
@@ -45,6 +65,13 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
         const { name, value, type } = e.target as HTMLInputElement;
         const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
         setFormData(prev => ({ ...prev, [name]: val }));
+    };
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const { name, files: targetFiles } = e.target;
+        if (targetFiles && targetFiles.length > 0) {
+            setFiles(prev => ({ ...prev, [name]: targetFiles[0] }));
+        }
     };
 
     const handleSubmit = async (e: FormEvent) => {
@@ -71,12 +98,22 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
                 customFields.paybackPeriod = calculatorResults.paybackPeriod;
             }
 
-            await crmService.createLead({
+            const newLead = await crmService.createLead({
                 ...formData,
                 productType: productType === 'rooftop' ? 'Rooftop Solar' : 'Solar Pump',
                 source: 'Public_Website',
                 customFields
             });
+
+            // Upload files sequentially
+            for (const [fieldName, file] of Object.entries(files)) {
+                try {
+                    await crmService.uploadLeadFile(newLead.id, fieldName, file);
+                } catch (err) {
+                    console.error(`Failed to upload ${fieldName}`, err);
+                }
+            }
+
             setIsSubmitted(true);
         } catch (err: any) {
             console.error("Submission error:", err);
@@ -229,7 +266,18 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
                         <h3 className="text-sm font-black text-text-primary flex items-center gap-2 mb-2">
                             <MapPin size={16} className="text-neon-cyan" /> LOCATION & TECHNICAL
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className={labelClasses}>State</label>
+                                <select
+                                    name="state"
+                                    value={formData.state || ''}
+                                    onChange={handleChange}
+                                    className={inputClasses}
+                                >
+                                    <option value="">Select State</option>
+                                    {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
                             <div>
                                 <label className={labelClasses}>District</label>
                                 <input
@@ -241,7 +289,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
                                     placeholder="District"
                                 />
                             </div>
-                            <div>
+                            <div className="col-span-2 md:col-span-1">
                                 <label className={labelClasses}>Tehsil</label>
                                 <input
                                     type="text"
@@ -252,7 +300,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
                                     placeholder="Tehsil"
                                 />
                             </div>
-                        </div>
                         <div>
                             <label className={labelClasses}>Village</label>
                             <input
@@ -300,6 +347,51 @@ const LeadForm: React.FC<LeadFormProps> = ({ productType, calculatorValue, calcu
                             </div>
                         )}
                     </div>
+
+                    {/* Dynamic Custom Fields from FormBuilder */}
+                    {formSchema.filter(field => !field.visibleInStates || field.visibleInStates.length === 0 || field.visibleInStates.includes(formData.state)).length > 0 && (
+                        <div className="space-y-6 md:col-span-2 pt-6 border-t border-glass-border/20">
+                            <h3 className="text-sm font-black text-text-primary flex items-center gap-2 mb-2">
+                                <FileText size={16} className="text-neon-cyan" /> CUSTOM REQUIREMENTS
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {formSchema.filter(field => !field.visibleInStates || field.visibleInStates.length === 0 || field.visibleInStates.includes(formData.state)).map(field => {
+                                    if (field.type === 'select') {
+                                        return (
+                                            <div key={field.id}>
+                                                <label className={labelClasses}>{field.label} {field.required && '*'}</label>
+                                                <select
+                                                    name={field.name}
+                                                    required={field.required}
+                                                    value={(formData as Record<string, any>)[field.name] || ''}
+                                                    onChange={handleChange}
+                                                    className={inputClasses}
+                                                >
+                                                    <option value="">Select Option</option>
+                                                    {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                </select>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div key={field.id}>
+                                            <label className={labelClasses}>{field.label} {field.required && '*'}</label>
+                                            <input
+                                                type={field.type === 'image' ? 'file' : field.type}
+                                                name={field.name}
+                                                required={field.required}
+                                                value={field.type === 'image' ? undefined : ((formData as Record<string, any>)[field.name] || '')}
+                                                onChange={field.type === 'image' ? handleFileChange : handleChange}
+                                                className={inputClasses}
+                                                placeholder={field.placeholder}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="pt-6 border-t border-glass-border/20">

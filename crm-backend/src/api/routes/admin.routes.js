@@ -4,9 +4,57 @@ import * as productController from '../controllers/product.controller.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
 import masterOnlyMiddleware from '../middlewares/masterOnly.middleware.js';
 
+import * as quotationController from '../controllers/quotation.controller.js';
+import * as lifecycleController from '../controllers/lifecycle.controller.js';
+import * as surveyController from '../controllers/survey.controller.js';
+import * as inventoryController from '../controllers/inventory.controller.js';
+import * as financeController from '../controllers/finance.controller.js';
+
 const admin = new Hono();
 
 admin.use('*', authMiddleware);
+
+// Inventory Management
+admin.get('/inventory/overview', inventoryController.getInventoryOverview);
+admin.post('/inventory/products', inventoryController.createOrUpdateProduct);
+admin.patch('/inventory/products/:id/stock', inventoryController.quickUpdateStock);
+admin.delete('/inventory/products/:id', inventoryController.deleteProduct);
+admin.get('/inventory/purchase-orders', inventoryController.getPurchaseOrders);
+admin.post('/inventory/purchase-orders', inventoryController.createPurchaseOrder);
+admin.post('/inventory/reserve', inventoryController.reserveProjectStock);
+admin.post('/inventory/dispatch', inventoryController.generateDispatchChallan);
+admin.get('/inventory/analytics', inventoryController.getInventoryAnalytics);
+admin.get('/inventory/panel-serials', inventoryController.getPanelSerials);
+admin.post('/inventory/panel-serials', inventoryController.addPanelSerial);
+admin.delete('/inventory/panel-serials/:id', inventoryController.deletePanelSerial);
+admin.post('/inventory/grn/:poId', inventoryController.confirmGRN);
+
+// Project Finance (per-lead)
+admin.get('/finance/dashboard-summary', financeController.getFinanceDashboardSummary);
+admin.get('/finance/:leadId', financeController.getProjectFinance);
+admin.patch('/finance/:leadId', financeController.updateProjectFinance);
+admin.post('/finance/:leadId/expenses', financeController.addProjectExpense);
+admin.delete('/finance/expenses/:id', financeController.deleteProjectExpense);
+
+// Surveys
+admin.get('/surveys', surveyController.getSurveys);
+admin.post('/surveys', surveyController.createSurvey);
+admin.get('/surveys/:id', surveyController.getSurveyById);
+admin.post('/surveys/:id/assign', surveyController.assignSurvey);
+admin.post('/surveys/:id/section', surveyController.updateSurveySection);
+admin.post('/surveys/:id/review', surveyController.reviewSurvey);
+
+// Lifecycle & Stage Verification
+admin.get('/leads/:id/lifecycle', lifecycleController.getLeadLifecycle);
+admin.post('/leads/:id/stage-verify', lifecycleController.verifyLeadStage);
+admin.post('/leads/:id/stage-override', masterOnlyMiddleware, lifecycleController.overrideLeadStage);
+
+// Quotations
+admin.get('/quotations', quotationController.getQuotations);
+admin.get('/quotations/:id', quotationController.getQuotationById);
+admin.post('/quotations', quotationController.saveQuotation);
+admin.patch('/quotations/:id/status', quotationController.updateQuotationStatus);
+admin.delete('/quotations/:id', quotationController.deleteQuotation);
 
 // Dashboard
 admin.get('/dashboard/stats', adminController.getDashboardStats);

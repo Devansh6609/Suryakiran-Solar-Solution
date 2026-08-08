@@ -1,89 +1,165 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { ADMIN_NAV_LINKS, Logo } from '../../constants';
+import { NavLink, useLocation } from 'react-router-dom';
+import { ADMIN_NAV_LINKS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
+import { LogOut, Zap } from 'lucide-react';
 
 interface SidebarProps {
     isCollapsed: boolean;
-    setCollapsed: (isCollapsed: boolean) => void;
+    setCollapsed: (v: boolean) => void;
     isMobileOpen: boolean;
     onMobileClose: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setCollapsed, isMobileOpen, onMobileClose }) => {
     const { user, logout } = useAuth();
-
-    const linkClass = "flex items-center px-4 py-3 text-sm font-medium text-text-secondary hover:text-white hover:bg-white/[0.02] rounded-xl transition-all duration-300 group relative mx-2";
-    const activeLinkClass = "font-black bg-gradient-to-r from-neon-cyan/20 to-transparent text-neon-cyan before:absolute before:left-0 before:top-1/4 before:bottom-1/4 before:w-1 before:bg-neon-cyan before:rounded-r-full before:shadow-[0_0_10px_theme(colors.neon-cyan)] shadow-[inset_1px_0_10px_theme(colors.neon-cyan/10)]";
+    const location = useLocation();
 
     const visibleLinks = ADMIN_NAV_LINKS.filter(link => user && link.roles.includes(user.role));
 
     const handleLogout = () => {
         logout();
-        // Force a full page reload after navigating to ensure all state is cleared
         window.location.hash = '/login';
         window.location.reload();
     };
 
-    const sidebarContent = (
-        <div className={`flex flex-col h-full bg-glass-surface/40 backdrop-blur-3xl border-r border-glass-border/20 relative`}>
-            <div className={`flex items-center h-20 flex-shrink-0 px-4 ${isCollapsed && 'lg:px-0 lg:justify-center'}`}>
-                <div className={`${isCollapsed ? 'lg:hidden' : ''} md:hidden lg:block text-gray-800 dark:text-text-primary`}>
-                    <Logo />
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full" style={{
+            backgroundColor: 'rgb(var(--sidebar-bg))',
+            borderRight: '1px solid rgb(var(--sidebar-border))',
+        }}>
+            {/* Logo */}
+            <div className={`flex items-center gap-3 h-[60px] flex-shrink-0 px-4 border-b`}
+                style={{ borderColor: 'rgb(var(--sidebar-border))' }}>
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
+                    style={{ backgroundColor: 'rgb(var(--accent))' }}>
+                    <Zap size={16} className="text-white" fill="white" />
                 </div>
-                <div className={`hidden ${isCollapsed ? 'lg:block' : ''} md:block lg:hidden text-text-primary`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-neon-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                </div>
+                {!isCollapsed && (
+                    <div className="min-w-0">
+                        <p className="text-sm font-700 leading-none truncate" style={{ color: 'rgb(var(--text-0))' }}>
+                            Varcas Energy
+                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'rgb(var(--text-2))' }}>
+                            CRM Platform
+                        </p>
+                    </div>
+                )}
             </div>
-            <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-                {visibleLinks.map((link) => (
-                    <NavLink
-                        key={link.name}
-                        to={link.path}
-                        end={link.path === '/admin'}
-                        className={({ isActive }) => `${linkClass} ${isActive ? activeLinkClass : ''}`}
-                        title={link.name}
-                    >
-                        {link.icon}
-                        <span className={`ml-4 whitespace-nowrap transition-opacity duration-200 md:hidden ${isCollapsed ? 'lg:hidden' : 'lg:inline-block'}`}>{link.name}</span>
-                    </NavLink>
-                ))}
+
+            {/* Navigation */}
+            <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto hide-scrollbar">
+                {visibleLinks.map((link) => {
+                    const isActive = link.path === '/admin'
+                        ? location.pathname === '/admin'
+                        : location.pathname.startsWith(link.path);
+
+                    return (
+                        <NavLink
+                            key={link.name}
+                            to={link.path}
+                            title={isCollapsed ? link.name : undefined}
+                            onClick={onMobileClose}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative ${
+                                isActive
+                                    ? 'text-accent'
+                                    : 'hover:bg-surface-2'
+                            }`}
+                            style={{
+                                backgroundColor: isActive ? 'rgb(var(--accent) / 0.1)' : undefined,
+                                color: isActive ? 'rgb(var(--accent))' : 'rgb(var(--text-2))',
+                            }}
+                        >
+                            {/* Active indicator */}
+                            {isActive && (
+                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r"
+                                    style={{ backgroundColor: 'rgb(var(--accent))' }} />
+                            )}
+
+                            {/* Icon */}
+                            <span className={`flex-shrink-0 transition-colors ${isActive ? '' : 'group-hover:text-text-0'}`}
+                                style={{ color: isActive ? 'rgb(var(--accent))' : 'rgb(var(--text-2))' }}>
+                                {link.icon}
+                            </span>
+
+                            {/* Label */}
+                            {!isCollapsed && (
+                                <span className="truncate" style={{ color: isActive ? 'rgb(var(--accent))' : 'rgb(var(--text-1))' }}>
+                                    {link.name}
+                                </span>
+                            )}
+                        </NavLink>
+                    );
+                })}
             </nav>
-            <div className="px-2 py-4 border-t border-glass-border/10">
+
+            {/* User section + logout */}
+            <div className="p-3 border-t space-y-1" style={{ borderColor: 'rgb(var(--sidebar-border))' }}>
+                {!isCollapsed && user && (
+                    <div className="flex items-center gap-3 px-3 py-2 rounded-lg mb-1"
+                        style={{ backgroundColor: 'rgb(var(--surface-2))' }}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                            style={{ backgroundColor: 'rgb(var(--accent))' }}>
+                            {user.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xs font-600 truncate" style={{ color: 'rgb(var(--text-0))' }}>{user.name}</p>
+                            <p className="text-[10px] truncate" style={{ color: 'rgb(var(--text-2))' }}>{user.role}</p>
+                        </div>
+                    </div>
+                )}
+
                 <button
                     onClick={handleLogout}
-                    className={`${linkClass} w-full text-error-red hover:text-error-red hover:bg-error-red/10`}
                     title="Logout"
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+                    style={{ color: 'rgb(var(--color-danger))' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(var(--color-danger) / 0.08)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 md:h-6 md:w-6"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    <span className={`ml-4 whitespace-nowrap transition-opacity duration-200 md:hidden ${isCollapsed ? 'lg:hidden' : 'lg:inline-block'}`}>Logout</span>
+                    <LogOut size={17} className="flex-shrink-0" />
+                    {!isCollapsed && <span>Logout</span>}
                 </button>
             </div>
-            {/* Collapse button for desktop */}
+
+            {/* Collapse toggle (desktop only) */}
             <button
                 onClick={() => setCollapsed(!isCollapsed)}
-                className="absolute top-6 p-2 rounded-full text-text-secondary hover:text-neon-cyan bg-glass-surface/80 border border-glass-border/30 hidden lg:flex items-center justify-center transition-all duration-300 z-50 hover:shadow-glow-sm hover:shadow-neon-cyan/20 backdrop-blur-md"
-                style={{ right: '-16px', width: '32px', height: '32px' }}
-                title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                className="absolute -right-3 top-[72px] w-6 h-6 rounded-full border flex items-center justify-center transition-all duration-150 z-50 hidden lg:flex"
+                style={{
+                    backgroundColor: 'rgb(var(--surface-1))',
+                    borderColor: 'rgb(var(--border-default))',
+                    color: 'rgb(var(--text-2))',
+                    boxShadow: 'var(--shadow-md)',
+                }}
+                title={isCollapsed ? 'Expand' : 'Collapse'}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}>
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>
             </button>
         </div>
     );
 
     return (
         <>
-            {/* Mobile Sidebar (Drawer) */}
+            {/* Mobile drawer */}
             <div className="md:hidden">
-                {isMobileOpen && <div onClick={onMobileClose} className="fixed inset-0 bg-black/60 z-40" />}
-                <div className={`fixed top-0 left-0 h-full w-64 z-50 transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                    {sidebarContent}
+                {isMobileOpen && (
+                    <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={onMobileClose} />
+                )}
+                <div className={`fixed top-0 left-0 h-full w-60 z-50 transition-transform duration-300 ease-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <SidebarContent />
                 </div>
             </div>
 
-            {/* Static Sidebar for Tablet/Desktop */}
-            <div className={`hidden md:flex md:flex-shrink-0 relative z-30 transition-all duration-300 ${isCollapsed ? 'lg:w-20' : 'lg:w-64'} md:w-20`}>
-                {sidebarContent}
+            {/* Desktop sidebar */}
+            <div className={`hidden md:flex md:flex-shrink-0 relative z-30 transition-all duration-300 ${isCollapsed ? 'lg:w-[64px]' : 'lg:w-[240px]'} md:w-[64px]`}>
+                <div className="w-full">
+                    <SidebarContent />
+                </div>
             </div>
         </>
     );

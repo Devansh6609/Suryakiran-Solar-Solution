@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '../components/AnimatedSection';
 import CalculatorForm from '../components/CalculatorForm';
 import InteractiveCalculator from '../components/InteractiveCalculator';
@@ -16,6 +17,7 @@ import {
 import rooftopVideo from '../assets/rooftop-solar-installation.mp4';
 
 const RooftopSolarPage: React.FC = () => {
+    const navigate = useNavigate();
     const [calcValue, setCalcValue] = useState<number>(3000);
     const [calcResults, setCalcResults] = useState<CalculationResults | null>(null);
 
@@ -64,10 +66,18 @@ const RooftopSolarPage: React.FC = () => {
                                 Experience energy independence with Varcas Rooftop Solar. Reduce bills, increase property value, and contribute to a greener planet with India's most trusted solar partner.
                             </p>
                             <div className="flex flex-wrap gap-4">
-                                <a href="#apply" className="px-8 py-4 rounded-2xl bg-gradient-to-r from-neon-cyan to-electric-blue text-night-sky font-black tracking-widest shadow-glow-sm shadow-neon-cyan/20 hover:scale-105 transition-all flex items-center gap-2 uppercase text-sm">
+                                <button 
+                                    onClick={() => {
+                                        document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                    className="px-8 py-4 rounded-2xl bg-gradient-to-r from-neon-cyan to-electric-blue text-night-sky font-black tracking-widest shadow-glow-sm shadow-neon-cyan/20 hover:scale-105 transition-all flex items-center gap-2 uppercase text-sm cursor-pointer"
+                                >
                                     Start Saving Now <ArrowRight size={18} />
-                                </a>
-                                <button className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black tracking-widest hover:bg-white/10 transition-all uppercase text-sm">
+                                </button>
+                                <button 
+                                    onClick={() => navigate('/success-stories')}
+                                    className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black tracking-widest hover:bg-white/10 transition-all uppercase text-sm cursor-pointer"
+                                >
                                     View Projects
                                 </button>
                             </div>

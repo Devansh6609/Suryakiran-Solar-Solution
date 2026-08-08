@@ -71,13 +71,13 @@ export const LeadsWorkflowSection: React.FC<LeadsWorkflowSectionProps> = ({ lead
     const checkAndAdvancePipeline = async (currentLeadVal: Lead, updatedField: string, value: any) => {
         let targetStage: PipelineStage | null = null;
 
-        // Logic to auto-advance pipeline based on triggers for PUMP/General
+        // Logic to auto-advance pipeline based on triggers
         if (updatedField === 'approvalStatus' && value === 'Approved') {
-            targetStage = PipelineStage.VerifiedLead;
+            targetStage = PipelineStage.NewLead;
         } else if (updatedField === 'surveyStatus' && value === 'Completed') {
-            targetStage = PipelineStage.SiteSurveyScheduled;
+            targetStage = PipelineStage.Survey;
         } else if (updatedField === 'ntpStatus' && value === 'Received') {
-            targetStage = PipelineStage.ClosedWon; // NTP = Work Order
+            targetStage = PipelineStage.CustomerApproved;
         }
 
         if (targetStage) {
@@ -95,6 +95,7 @@ export const LeadsWorkflowSection: React.FC<LeadsWorkflowSectionProps> = ({ lead
             }
         }
     };
+
 
     const handleUpdate = async (field: string, value: any, fileKey?: string, file?: File) => {
         if (loading) return;

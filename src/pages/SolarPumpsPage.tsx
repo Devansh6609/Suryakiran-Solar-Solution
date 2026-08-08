@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '../components/AnimatedSection';
 import CalculatorForm from '../components/CalculatorForm';
 import InteractiveCalculator from '../components/InteractiveCalculator';
@@ -16,6 +17,7 @@ import {
 import pumpVideo from '../assets/solar-pump-agriculture.mp4';
 
 const SolarPumpsPage: React.FC = () => {
+    const navigate = useNavigate();
     const [calcValue, setCalcValue] = useState<number>(10000);
     const [calcResults, setCalcResults] = useState<CalculationResults | null>(null);
 
@@ -64,9 +66,20 @@ const SolarPumpsPage: React.FC = () => {
                                 Experience hassle-free irrigation with Varcas Solar Pumps. No dependence on diesel or irregular grid power. High efficiency, low maintenance, and massive government subsidies.
                             </p>
                             <div className="flex flex-wrap gap-4">
-                                <a href="#apply" className="px-8 py-4 rounded-2xl bg-gradient-to-r from-primary-green to-neon-cyan text-night-sky font-black tracking-widest shadow-glow-sm shadow-primary-green/20 hover:scale-105 transition-all flex items-center gap-2 uppercase text-sm">
+                                <button 
+                                    onClick={() => {
+                                        document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                    className="px-8 py-4 rounded-2xl bg-gradient-to-r from-primary-green to-neon-cyan text-night-sky font-black tracking-widest shadow-glow-sm shadow-primary-green/20 hover:scale-105 transition-all flex items-center gap-2 uppercase text-sm cursor-pointer"
+                                >
                                     Calculate My Savings <ArrowRight size={18} />
-                                </a>
+                                </button>
+                                <button 
+                                    onClick={() => navigate('/success-stories')}
+                                    className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black tracking-widest hover:bg-white/10 transition-all uppercase text-sm cursor-pointer"
+                                >
+                                    View Projects
+                                </button>
                             </div>
                         </AnimatedSection>
 

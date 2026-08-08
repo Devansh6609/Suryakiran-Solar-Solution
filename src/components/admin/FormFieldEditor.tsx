@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FormField, FormFieldType } from '../../types';
 
 interface FormFieldEditorProps {
@@ -43,6 +44,15 @@ const FormFieldEditor: React.FC<FormFieldEditorProps> = ({ field, onSave, onClos
         setCurrentField({ ...currentField, options });
     }
 
+    const handleStatesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        if (!val.trim()) {
+            setCurrentField({ ...currentField, visibleInStates: [] });
+        } else {
+            setCurrentField({ ...currentField, visibleInStates: val.split(',').map(s => s.trim()) });
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Basic validation
@@ -55,9 +65,9 @@ const FormFieldEditor: React.FC<FormFieldEditorProps> = ({ field, onSave, onClos
 
     const inputStyles = "mt-1 w-full p-2 border rounded bg-gray-50 border-gray-300 dark:bg-night-sky dark:border-border-color dark:text-text-primary";
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-secondary-background p-6 rounded-lg shadow-xl w-full max-w-md">
+    const modalContent = (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm">
+            <div className="bg-white dark:bg-secondary-background p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-text-primary">{field ? 'Edit Field' : 'Add New Field'}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -89,11 +99,15 @@ const FormFieldEditor: React.FC<FormFieldEditorProps> = ({ field, onSave, onClos
                             <textarea name="options" value={currentField.options?.join('\n') || ''} onChange={handleOptionsChange} className={inputStyles} rows={4}></textarea>
                         </div>
                     )}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary">Visible in States (Comma separated, leave blank for all)</label>
+                        <input type="text" name="visibleInStates" value={currentField.visibleInStates?.join(', ') || ''} onChange={handleStatesChange} className={inputStyles} placeholder="e.g., Maharashtra, Gujarat" />
+                    </div>
                     <div className="flex items-center">
                         <input type="checkbox" name="required" id="required" checked={currentField.required} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-primary-green focus:ring-primary-green" />
                         <label htmlFor="required" className="ml-2 text-sm font-medium text-gray-700 dark:text-text-secondary">Required Field</label>
                     </div>
-                    <div className="flex justify-end space-x-4">
+                    <div className="flex justify-end space-x-4 pt-4">
                         <button type="button" onClick={onClose} className="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-text-primary dark:hover:bg-gray-600">Cancel</button>
                         <button type="submit" className="py-2 px-4 bg-primary-green text-white rounded-lg hover:bg-green-800">Save Field</button>
                     </div>
@@ -101,6 +115,8 @@ const FormFieldEditor: React.FC<FormFieldEditorProps> = ({ field, onSave, onClos
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 };
 
 export default FormFieldEditor;
