@@ -24,12 +24,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     useEffect(() => {
-        const root = document.documentElement;
-        if (theme === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
+        // We no longer apply 'dark' to document.documentElement here.
+        // Instead, AdminLayout applies it to its own root div to prevent it from affecting the public website.
     }, [theme]);
 
     return (

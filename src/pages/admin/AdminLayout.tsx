@@ -188,8 +188,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
     return (
         <NotificationProvider>
-            {/* Apply dark class via ThemeProvider on <html>, so crm-app just reads it */}
-            <div className={`crm-app flex h-dvh overflow-hidden`} style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+            {/* Apply dark class conditionally to the CRM container to prevent bleeding to the public website */}
+            <div className={`crm-app flex h-dvh overflow-hidden ${isDark ? 'dark' : ''}`} style={{ fontFamily: 'Inter, system-ui, sans-serif', backgroundColor: 'rgb(var(--surface-0))' }}>
 
                 {/* Sidebar */}
                 <Sidebar
